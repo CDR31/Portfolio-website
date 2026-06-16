@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Success</title>
+
+    <link rel="stylesheet"
+    href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+<div class="success-container">
+
+    <h1>✓ SUCCESS</h1>
+
+    <h2>{{ message }}</h2>
+
+    <a href="{{ redirect_url }}" class="btn">
+        Continue
+    </a>
+
+</div>
+
+</body>
+</html>
