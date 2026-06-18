@@ -1,10 +1,31 @@
+from werkzeug.utils import secure_filename
+import os
 from flask import Flask, render_template, request, session, redirect,send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime,UTC
 
+
 app = Flask(__name__)
 app.secret_key = "pankaj_portfolio_secret_2026"
+
+app.config["UPLOAD_FOLDER"] = os.path.join(
+    app.root_path,
+    "static",
+    "profile_photos"
+)
+
+app.config["RESUME_FOLDER"] = os.path.join(
+    app.root_path,
+    "static",
+    "user_resumes"
+)
+
+app.config["CERTIFICATE_FOLDER"] = os.path.join(
+    app.root_path,
+    "static",
+    "certificates"
+)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///portfolio.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -20,6 +41,9 @@ class User(db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
 
     password = db.Column(db.String(200), nullable=False)
+
+    profile_photo = db.Column(db.String(300))
+
 
 class Project(db.Model):
 
@@ -60,6 +84,106 @@ class ContactMessage(db.Model):
         db.Text,
         nullable=False
     )
+
+class Resume(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    filename = db.Column(
+        db.String(300)
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id")
+    )
+
+class Certificate(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    title = db.Column(
+        db.String(200)
+    )
+
+    filename = db.Column(
+        db.String(300)
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id")
+    )
+
+class Skill(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    name = db.Column(
+        db.String(100)
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id")
+    )
+
+@app.route("/upload_resume", methods=["POST"])
+def upload_resume():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    file = request.files["resume"]
+
+    if file.filename == "":
+        return "Please select a resume"
+
+    filename = secure_filename(
+        file.filename
+    )
+
+    os.makedirs(
+        app.config["RESUME_FOLDER"],
+        exist_ok=True
+    )
+
+    file.save(
+        os.path.join(
+            app.config["RESUME_FOLDER"],
+            filename
+        )
+    )
+
+    old_resume = Resume.query.filter_by(
+        user_id=session["user_id"]
+    ).first()
+
+    if old_resume:
+
+        old_resume.filename = filename
+
+    else:
+
+        new_resume = Resume(
+            filename=filename,
+            user_id=session["user_id"]
+        )
+
+        db.session.add(new_resume)
+
+    db.session.commit()
+
+    return redirect("/profile")
 
 @app.route("/")
 def home():
@@ -172,7 +296,10 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        return "User Registered Successfully 🎉"
+        session["user_id"] = new_user.id
+        session["user_name"] = new_user.name
+
+        return redirect("/dashboard")
 
     return render_template("register.html")
 
@@ -325,6 +452,186 @@ def users():
 
     return output
 
+@app.route("/profile")
+def profile():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(
+        session["user_id"]
+    )
+
+    resume = Resume.query.filter_by(
+        user_id=session["user_id"]
+    ).first()
+
+    certificates = Certificate.query.filter_by(
+        user_id=session["user_id"]
+    ).all()
+
+    skills = Skill.query.filter_by(
+    user_id=session["user_id"]).all()
+
+    return render_template(
+        "profile.html",
+        user=user,
+        resume=resume,
+        certificates=certificates,
+        skills=skills
+    )
+
+@app.route("/upload_photo", methods=["POST"])
+def upload_photo():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    file = request.files["photo"]
+
+    if file.filename == "":
+        return "Please select a file"
+
+    filename = secure_filename(file.filename)
+
+    os.makedirs(
+        app.config["UPLOAD_FOLDER"],
+        exist_ok=True
+    )
+
+    filepath = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        filename
+    )
+
+    file.save(filepath)
+
+    user = User.query.get(session["user_id"])
+
+    user.profile_photo = filename
+
+    db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/upload_certificate", methods=["POST"])
+def upload_certificate():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    title = request.form["title"]
+
+    file = request.files["certificate"]
+
+    if file.filename == "":
+        return "Please select a certificate"
+
+    filename = secure_filename(file.filename)
+
+    os.makedirs(
+        app.config["CERTIFICATE_FOLDER"],
+        exist_ok=True
+    )
+    file.save(
+        os.path.join(
+            app.config["CERTIFICATE_FOLDER"],
+            filename
+        )
+    )
+    new_certificate = Certificate(
+        title=title,
+        filename=filename,
+        user_id=session["user_id"]
+    )
+    db.session.add(new_certificate)
+
+    db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/delete_certificate/<int:id>")
+def delete_certificate(id):
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    certificate = Certificate.query.get_or_404(id)
+
+    if certificate.user_id != session["user_id"]:
+        return "Access Denied"
+
+    db.session.delete(certificate)
+    db.session.commit()
+
+    return redirect("/profile")
+
+
+@app.route("/delete_photo")
+def delete_photo():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(session["user_id"])
+
+    user.profile_photo = None
+
+    db.session.commit()
+
+    return redirect("/profile")
+
+
+@app.route("/delete_resume")
+def delete_resume():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    resume = Resume.query.filter_by(
+        user_id=session["user_id"]
+    ).first()
+
+    if resume:
+        db.session.delete(resume)
+        db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/add_skill", methods=["POST"])
+def add_skill():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    skill_name = request.form["skill"]
+
+    new_skill = Skill(
+        name=skill_name,
+        user_id=session["user_id"]
+    )
+
+    db.session.add(new_skill)
+    db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/delete_skill/<int:id>")
+def delete_skill(id):
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    skill = Skill.query.get_or_404(id)
+
+    if skill.user_id != session["user_id"]:
+        return "Access Denied"
+
+    db.session.delete(skill)
+
+    db.session.commit()
+
+    return redirect("/profile")
 
 if __name__ == "__main__":
     with app.app_context():

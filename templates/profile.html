@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Profile</title>
+</head>
+
+<body>
+
+<h1>My Profile</h1>
+
+<h2>{{ user.name }}</h2>
+
+<p>{{ user.email }}</p>
+
+</body>
+
+</html>
+
+<form action="/upload_photo"
+      method="POST"
+      enctype="multipart/form-data">
+
+    <input
+        type="file"
+        name="photo">
+
+    <button type="submit">
+        Upload Photo
+    </button>
+
+</form>
+
+{% if user.profile_photo %}
+
+<img
+src="{{ url_for('static',
+filename='profile_photos/' + user.profile_photo) }}"
+width="200">
+
+<br><br>
+
+<a href="{{ url_for(
+'static',
+filename='profile_photos/' + user.profile_photo
+) }}"
+download>
+
+⬇️ Download Photo
+
+</a>
+
+|
+
+<a href="/delete_photo">
+❌ Delete Photo
+</a>
+
+{% endif %}
+
+<h2>Upload Resume</h2>
+
+<form
+action="/upload_resume"
+method="POST"
+enctype="multipart/form-data">
+
+<input
+type="file"
+name="resume">
+
+<button type="submit">
+Upload Resume
+</button>
+
+</form>
+
+{% if resume %}
+
+📄 Resume
+
+<a href="{{ url_for(
+'static',
+filename='user_resumes/' + resume.filename
+) }}"
+target="_blank">
+
+👁 View
+
+</a>
+
+|
+
+<a href="{{ url_for(
+'static',
+filename='user_resumes/' + resume.filename
+) }}"
+download>
+
+⬇️ Download
+
+</a>
+
+|
+
+<a href="/delete_resume">
+❌ Delete Resume
+</a>
+
+{% endif %}
+
+<h2>Upload Certificate</h2>
+
+<form
+action="/upload_certificate"
+method="POST"
+enctype="multipart/form-data">
+
+<input
+type="text"
+name="title"
+placeholder="Certificate Name">
+
+<input
+type="file"
+name="certificate">
+
+<button type="submit">
+Upload Certificate
+</button>
+
+</form>
+
+<h2>My Certificates</h2>
+
+{% for cert in certificates %}
+
+<p>
+
+    📜 {{ cert.title }}
+
+    |
+
+    <a href="{{ url_for(
+    'static',
+    filename='certificates/' + cert.filename
+    ) }}"
+    target="_blank">
+
+        👁 View
+
+    </a>
+
+    |
+
+    <a href="{{ url_for(
+    'static',
+    filename='certificates/' + cert.filename
+    ) }}"
+    download>
+
+        ⬇️ Download
+
+    </a>
+
+    |
+
+    <a href="/delete_certificate/{{ cert.id }}">
+        ❌ Delete
+    </a>
+
+</p>
+{% endfor %}
+
+<h2>My Skills</h2>
+
+<form action="/add_skill" method="POST">
+
+    <input
+    type="text"
+    name="skill"
+    placeholder="Enter Skill">
+
+    <button type="submit">
+        Add Skill
+    </button>
+
+</form>
+
+<br>
+
+{% for skill in skills %}
+
+<p>
+
+✅ {{ skill.name }}
+
+<a href="/delete_skill/{{ skill.id }}">
+    ❌ Delete
+</a>
+
+</p>
+
+{% endfor %}
