@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Pankaj Portfolio</title>
+    <title>Student Service</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -16,7 +16,7 @@
     <nav class="navbar">
 
         <div class="logo">
-            Pankaj Portfolio
+            Student Service
         </div>
 
         <div class="nav-links">
@@ -35,6 +35,32 @@
 
             <a href="/profile">Profile</a>
 
+            <a href="/settings">Settings</a>
+
+            <a href="/feedback">Feedback</a>
+
+            <a href="/my_feedback">My Feedback</a>
+
+            <!-- <a href="/all_feedback">View Feedback</a> -->
+
+            {% if session["user_name"] == "Pankaj" %}
+            <a href="/all_feedback">
+            View Feedback
+            
+            </a>
+
+            {% endif %}
+
+            {% if session["user_name"] == "Pankaj Rajpoot" %}
+
+            <a href="/admin">
+
+            🛠 Admin Panel
+
+            </a>
+
+            {% endif %}
+
             <a href="/logout">Logout</a>
 
         </div>
@@ -45,36 +71,117 @@
 
     <section class="hero">
 
-        <h1>Hello, I'm Pankaj</h1>
+    <h1>Hello, I'm Pankaj</h1>
 
-        <p>
-            Aspiring Data Scientist & Python Developer
-        </p>
+    <p>
+        Aspiring Data Scientist & Python Developer
+    </p>
 
-        <a href="/projects" class="btn">
-            View Projects
-        </a>
+    <h3>Complete Your Profile</h3>
 
-        <a href="/resume" class="btn">
-            Download Resume
-        </a>
+<ul>
 
-    </section>
+{% if not user.profile_photo %}
+<li>❌ Upload Profile Photo</li>
+{% endif %}
 
-    <section class="about">
+{% if not about %}
+<li>❌ Add About Me</li>
+{% endif %}
 
-        <h2>About Me</h2>
+{% if not skills %}
+<li>❌ Add Skills</li>
+{% endif %}
 
-        <p>
-            I am an aspiring Data Scientist passionate about
-            Python, Machine Learning, Data Analysis, SQL,
-            Flask, and Web Development.
+{% if not educations %}
+<li>❌ Add Education</li>
+{% endif %}
 
-            I enjoy building projects that solve real-world
-            problems using data and technology.
-        </p>
+{% if not resume %}
+<li>❌ Upload Resume</li>
+{% endif %}
 
-    </section>
+{% if not certificates %}
+<li>❌ Add Certificates</li>
+{% endif %}
+
+{% if not experiences %}
+<li>❌ Add Experience</li>
+{% endif %}
+
+{% if not social %}
+<li>❌ Add Social Links</li>
+{% endif %}
+
+</ul>
+
+{% if completion == 100 %}
+<h4>🎉 Profile Completed 100%</h4>
+{% endif %}
+
+    <div class="progress">
+
+        <div class="progress-bar"
+        role="progressbar"
+        style="width: {{ completion }}%;">
+
+        {{ completion }}%
+
+        </div>
+
+    </div>
+
+    <br>
+
+    <a href="/projects" class="btn">
+        View Projects
+    </a>
+
+</section>
+
+<section class="recent-activity">
+
+    <h2>Recent Activity</h2>
+
+    {% for activity in activities %}
+
+    <p>
+
+    ✅ {{ activity.activity }}
+
+    </p>
+
+    {% endfor %}
+
+</section>
+
+<section class="dashboard-stats">
+
+    <h2>My Statistics</h2>
+
+    <div class="project-card">
+        <h3>Projects</h3>
+        <p>{{ projects|length }}</p>
+    </div>
+
+    <div class="project-card">
+        <h3>Skills</h3>
+        <p>{{ skills|length }}</p>
+    </div>
+
+    <div class="project-card">
+        <h3>Certificates</h3>
+        <p>{{ certificates|length }}</p>
+    </div>
+
+    <div class="project-card">
+        <h3>Education</h3>
+        <p>{{ educations|length }}</p>
+    </div>
+
+</section>
+
+<section class="about">
 
     <section class="skills">
 

@@ -1,0 +1,32 @@
+<h1>Feedback Conversation</h1>
+
+{% for msg in messages %}
+
+<p>
+
+<strong>{{ msg.sender }}</strong>
+
+:
+
+{{ msg.message }}
+
+</p>
+
+<hr>
+
+{% endfor %}
+
+<form method="POST"
+action="/user_reply/{{ feedback.id }}">
+
+<textarea
+name="message">
+</textarea>
+
+<button type="submit">
+
+Send
+
+</button>
+
+</form>

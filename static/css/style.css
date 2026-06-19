@@ -317,3 +317,16 @@ footer{
     font-size:18px;
     margin-bottom:15px;
 }
+
+nav {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+nav a {
+    margin-right: 10px;
+}
+
+.btn {
+    margin-top: 15px;
+}

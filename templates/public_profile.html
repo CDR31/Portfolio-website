@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{ user.name }}</title>
+</head>
+
+<body>
+
+<h1>{{ user.name }}</h1>
+
+{% if user.profile_photo %}
+
+<img
+src="{{ url_for(
+'static',
+filename='profile_photos/' + user.profile_photo
+) }}"
+width="200">
+
+{% endif %}
+
+<p>
+
+Email:
+{{ user.email }}
+
+</p>
+
+</body>
+
+</html>

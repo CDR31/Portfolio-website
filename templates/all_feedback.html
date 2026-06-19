@@ -1,0 +1,42 @@
+<h1>All Feedback</h1>
+
+{% for feedback in feedbacks %}
+
+<p>
+
+<strong>Name:</strong>
+
+{{ feedback.name }}
+
+</p>
+
+<p>
+
+<strong>Message:</strong>
+
+{{ feedback.message }}
+
+</p>
+
+<form
+action="/reply_feedback/{{ feedback.id }}"
+method="POST">
+
+<textarea
+name="reply"
+placeholder="Write Reply">
+</textarea>
+
+<br><br>
+
+<button type="submit">
+
+Send Reply
+
+</button>
+
+</form>
+
+<hr>
+
+{% endfor %}

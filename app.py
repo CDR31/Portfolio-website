@@ -7,6 +7,19 @@ from datetime import datetime,UTC
 
 
 app = Flask(__name__)
+
+@app.after_request
+def add_header(response):
+
+    response.headers["Cache-Control"] = \
+        "no-store, no-cache, must-revalidate, max-age=0"
+
+    response.headers["Pragma"] = "no-cache"
+
+    response.headers["Expires"] = "0"
+
+    return response
+
 app.secret_key = "pankaj_portfolio_secret_2026"
 
 app.config["UPLOAD_FOLDER"] = os.path.join(
@@ -27,6 +40,23 @@ app.config["CERTIFICATE_FOLDER"] = os.path.join(
     "certificates"
 )
 
+app.config["EDUCATION_FOLDER"] = os.path.join(
+    app.root_path,
+    "static",
+    "education_files"
+)
+
+app.config["ACHIEVEMENT_FOLDER"] = os.path.join(
+    app.root_path,
+    "static",
+    "achievements"
+)
+
+app.config["EXPERIENCE_FOLDER"] = os.path.join(
+    app.root_path,
+    "static",
+    "experiences"
+)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///portfolio.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -43,6 +73,9 @@ class User(db.Model):
     password = db.Column(db.String(200), nullable=False)
 
     profile_photo = db.Column(db.String(300))
+
+    is_active = db.Column(db.Boolean,default=True)
+    
 
 
 class Project(db.Model):
@@ -137,6 +170,240 @@ class Skill(db.Model):
         db.ForeignKey("user.id")
     )
 
+class Education(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    level = db.Column(
+        db.String(50)
+    )
+
+    institute = db.Column(
+        db.String(200)
+    )
+
+    board_university = db.Column(
+        db.String(200)
+    )
+
+    stream_degree = db.Column(
+        db.String(200)
+    )
+
+    score = db.Column(
+        db.String(50)
+    )
+
+    passing_year = db.Column(
+        db.String(20)
+    )
+
+    achievements = db.Column(
+        db.Text
+    )
+
+    subjects = db.Column(
+        db.String(300)
+    )
+
+    city = db.Column(
+        db.String(100)
+    )
+
+    state = db.Column(
+        db.String(100)
+    )
+
+    rank = db.Column(
+        db.String(50)
+    )
+
+    certificate_file = db.Column(
+        db.String(300)
+    )
+
+    marksheet_file = db.Column(
+        db.String(300)
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id")
+    )
+
+class AboutMe(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    bio = db.Column(
+        db.Text
+    )
+
+    career_goal = db.Column(
+        db.Text
+    )
+
+    hobbies = db.Column(
+        db.Text
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id")
+    )
+
+class SocialLink(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    github = db.Column(
+        db.String(300)
+    )
+
+    linkedin = db.Column(
+        db.String(300)
+    )
+
+    leetcode = db.Column(
+        db.String(300)
+    )
+
+    codechef = db.Column(
+        db.String(300)
+    )
+
+    codeforces = db.Column(
+        db.String(300)
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id")
+    )
+
+class Achievement(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    title = db.Column(
+        db.String(200)
+    )
+
+    description = db.Column(
+        db.Text
+    )
+
+    achievement_file = db.Column(
+        db.String(300)
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id")
+    )
+
+    
+
+class Experience(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    company = db.Column(
+        db.String(200)
+    )
+
+    role = db.Column(
+        db.String(200)
+    )
+
+    duration = db.Column(
+        db.String(100)
+    )
+
+    description = db.Column(
+        db.Text
+    )
+
+    certificate_file = db.Column(
+        db.String(300)
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id")
+    )
+
+class Feedback(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    name = db.Column(
+        db.String(100)
+    )
+
+    email = db.Column(
+        db.String(100)
+    )
+
+    message = db.Column(
+        db.Text
+    )
+
+    reply = db.Column(
+        db.Text
+    )
+
+class FeedbackMessage(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    feedback_id = db.Column(
+        db.Integer,
+        db.ForeignKey("feedback.id")
+    )
+
+    sender = db.Column(
+        db.String(20)
+    )
+
+    message = db.Column(
+        db.Text
+    )
+
+    user_reply = db.Column(db.Text)
+
+class Activity(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(db.Integer)
+
+    activity = db.Column(db.String(200))
+
+
+    
+
 @app.route("/upload_resume", methods=["POST"])
 def upload_resume():
 
@@ -201,13 +468,19 @@ def login():
 
         user = User.query.filter_by(email=email).first()
 
-        
-
         if user:
-            if user and check_password_hash(
-            user.password,
-            password
-        ):
+
+            if not user.is_active:
+
+                user.is_active = True
+
+                db.session.commit()
+
+            if check_password_hash(
+                user.password,
+                password
+            ):
+
                 session["user_id"] = user.id
                 session["user_name"] = user.name
 
@@ -223,9 +496,86 @@ def dashboard():
     if "user_id" not in session:
         return redirect("/login")
 
+    projects = Project.query.filter_by(
+        user_id=session["user_id"]
+    ).all()
+
+    skills = Skill.query.filter_by(
+        user_id=session["user_id"]
+    ).all()
+
+    certificates = Certificate.query.filter_by(
+        user_id=session["user_id"]
+    ).all()
+
+    educations = Education.query.filter_by(
+        user_id=session["user_id"]
+    ).all()
+
+    user = User.query.get(
+        session["user_id"]
+    )
+
+    about = AboutMe.query.filter_by(
+        user_id=session["user_id"]
+    ).first()
+
+    resume = Resume.query.filter_by(
+        user_id=session["user_id"]
+    ).first()
+
+    experiences = Experience.query.filter_by(
+        user_id=session["user_id"]
+    ).all()
+
+    social = SocialLink.query.filter_by(
+    user_id=session["user_id"]
+    ).first()
+
+    activities = Activity.query.filter_by(
+    user_id=session["user_id"]
+    ).all()
+
+    completion = 0
+
+    if user.profile_photo:
+        completion += 10
+
+    if about:
+        completion += 15
+
+    if skills:
+        completion += 15
+
+    if educations:
+        completion += 15
+
+    if resume:
+        completion += 15
+
+    if certificates:
+        completion += 10
+
+    if experiences:
+        completion += 10
+
+    if social:
+        completion += 10
+
     return render_template(
         "dashboard.html",
-        username=session["user_name"]
+        username=session["user_name"],
+        projects=projects,
+        skills=skills,
+        certificates=certificates,
+        educations=educations,
+        about=about,
+        social=social,
+        experiences=experiences,
+        user=user,
+        resume=resume,
+        completion=completion,
+        activities=activities
     )
 
 @app.route("/add_project", methods=["GET", "POST"])
@@ -248,6 +598,18 @@ def add_project():
             github_link=github_link,
             user_id=session["user_id"]
         )
+
+        activity = Activity(
+
+            user_id=session["user_id"],
+
+        activity="Added a new project"
+
+)
+
+        db.session.add(activity)
+
+        db.session.commit()
 
         db.session.add(project)
         db.session.commit()
@@ -473,12 +835,36 @@ def profile():
     skills = Skill.query.filter_by(
     user_id=session["user_id"]).all()
 
+    educations = Education.query.filter_by(
+    user_id=session["user_id"]
+    ).all()
+
+    about = AboutMe.query.filter_by(
+    user_id=session["user_id"]
+    ).first()
+
+    social = SocialLink.query.filter_by(
+    user_id=session["user_id"]
+    ).first()
+
+    achievements = Achievement.query.filter_by(
+    user_id=session["user_id"]
+    ).all()
+
+    experiences = Experience.query.filter_by(
+    user_id=session["user_id"]).all()
+
     return render_template(
         "profile.html",
         user=user,
         resume=resume,
         certificates=certificates,
-        skills=skills
+        skills=skills,
+        educations=educations,
+        about=about,
+        social=social,
+        achievements=achievements,
+        experiences=experiences
     )
 
 @app.route("/upload_photo", methods=["POST"])
@@ -575,6 +961,16 @@ def delete_photo():
 
     user = User.query.get(session["user_id"])
 
+    if user.profile_photo:
+
+        filepath = os.path.join(
+            app.config["UPLOAD_FOLDER"],
+            user.profile_photo
+        )
+
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
     user.profile_photo = None
 
     db.session.commit()
@@ -632,6 +1028,659 @@ def delete_skill(id):
     db.session.commit()
 
     return redirect("/profile")
+@app.route("/add_education", methods=["POST"])
+def add_education():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    certificate = request.files["certificate"]
+    marksheet = request.files["marksheet"]
+
+    certificate_name = ""
+    marksheet_name = ""
+
+    os.makedirs(
+        app.config["EDUCATION_FOLDER"],
+        exist_ok=True
+    )
+
+    if certificate.filename != "":
+
+        certificate_name = secure_filename(
+            certificate.filename
+        )
+
+        certificate.save(
+            os.path.join(
+                app.config["EDUCATION_FOLDER"],
+                certificate_name
+            )
+        )
+
+    if marksheet.filename != "":
+
+        marksheet_name = secure_filename(
+            marksheet.filename
+        )
+
+        marksheet.save(
+            os.path.join(
+                app.config["EDUCATION_FOLDER"],
+                marksheet_name
+            )
+        )
+
+    education = Education(
+        level=request.form["level"],
+        institute=request.form["institute"],
+        board_university=request.form["board_university"],
+        stream_degree=request.form["stream_degree"],
+        score=request.form["score"],
+        passing_year=request.form["passing_year"],
+        subjects=request.form["subjects"],
+        city=request.form["city"],
+        state=request.form["state"],
+        rank=request.form["rank"],
+        achievements=request.form["achievements"],
+        certificate_file=certificate_name,
+        marksheet_file=marksheet_name,
+        user_id=session["user_id"]
+    )
+
+    db.session.add(education)
+    db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/delete_education/<int:id>")
+def delete_education(id):
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    education = Education.query.get_or_404(id)
+
+    if education.user_id != session["user_id"]:
+        return "Access Denied"
+
+    db.session.delete(education)
+
+    db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/add_about", methods=["POST"])
+def add_about():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    old_about = AboutMe.query.filter_by(
+        user_id=session["user_id"]
+    ).first()
+
+    if old_about:
+
+        old_about.bio = request.form["bio"]
+        old_about.career_goal = request.form["career_goal"]
+        old_about.hobbies = request.form["hobbies"]
+
+    else:
+
+        new_about = AboutMe(
+            bio=request.form["bio"],
+            career_goal=request.form["career_goal"],
+            hobbies=request.form["hobbies"],
+            user_id=session["user_id"]
+        )
+
+        db.session.add(new_about)
+
+    db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/add_social", methods=["POST"])
+def add_social():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    social = SocialLink.query.filter_by(
+        user_id=session["user_id"]
+    ).first()
+
+    if social:
+
+        social.github = request.form["github"]
+        social.linkedin = request.form["linkedin"]
+        social.leetcode = request.form["leetcode"]
+        social.codechef = request.form["codechef"]
+        social.codeforces = request.form["codeforces"]
+
+    else:
+
+        social = SocialLink(
+            github=request.form["github"],
+            linkedin=request.form["linkedin"],
+            leetcode=request.form["leetcode"],
+            codechef=request.form["codechef"],
+            codeforces=request.form["codeforces"],
+            user_id=session["user_id"]
+        )
+
+        db.session.add(social)
+
+    db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/delete_about")
+def delete_about():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    about = AboutMe.query.filter_by(
+        user_id=session["user_id"]
+    ).first()
+
+    if about:
+
+        db.session.delete(about)
+        db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/delete_social")
+def delete_social():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    social = SocialLink.query.filter_by(
+        user_id=session["user_id"]
+    ).first()
+
+    if social:
+
+        db.session.delete(social)
+        db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/add_achievement", methods=["POST"])
+def add_achievement():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    file = request.files["achievement_file"]
+
+    filename = ""
+
+    os.makedirs(
+        app.config["ACHIEVEMENT_FOLDER"],
+        exist_ok=True
+    )
+
+    if file.filename != "":
+
+        filename = secure_filename(
+            file.filename
+        )
+
+        file.save(
+            os.path.join(
+                app.config["ACHIEVEMENT_FOLDER"],
+                filename
+            )
+        )
+
+    achievement = Achievement(
+        title=request.form["title"],
+        description=request.form["description"],
+        achievement_file=filename,
+        user_id=session["user_id"]
+    )
+
+    db.session.add(achievement)
+
+    db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/delete_achievement/<int:id>")
+def delete_achievement(id):
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    achievement = Achievement.query.get_or_404(id)
+
+    if achievement.user_id != session["user_id"]:
+        return "Access Denied"
+
+    if achievement.achievement_file:
+
+        filepath = os.path.join(
+            app.config["ACHIEVEMENT_FOLDER"],
+            achievement.achievement_file
+        )
+
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
+    db.session.delete(achievement)
+
+    db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/add_experience", methods=["POST"])
+def add_experience():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    file = request.files["certificate"]
+
+    filename = ""
+
+    os.makedirs(
+        app.config["EXPERIENCE_FOLDER"],
+        exist_ok=True
+    )
+
+    if file.filename != "":
+
+        filename = secure_filename(
+            file.filename
+        )
+
+        file.save(
+            os.path.join(
+                app.config["EXPERIENCE_FOLDER"],
+                filename
+            )
+        )
+
+    experience = Experience(
+        company=request.form["company"],
+        role=request.form["role"],
+        duration=request.form["duration"],
+        description=request.form["description"],
+        certificate_file=filename,
+        user_id=session["user_id"]
+    )
+
+    db.session.add(experience)
+
+    db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/delete_experience/<int:id>")
+def delete_experience(id):
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    experience = Experience.query.get_or_404(id)
+
+    if experience.user_id != session["user_id"]:
+        return "Access Denied"
+
+    if experience.certificate_file:
+
+        filepath = os.path.join(
+            app.config["EXPERIENCE_FOLDER"],
+            experience.certificate_file
+        )
+
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
+    db.session.delete(experience)
+
+    db.session.commit()
+
+    #return redirect("/profile")
+    return redirect("/profile#experience")
+
+@app.route("/settings")
+def settings():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    return render_template(
+        "settings.html"
+    )
+
+@app.route("/change_password", methods=["POST"])
+def change_password():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(
+        session["user_id"]
+    )
+
+    old_password = request.form["old_password"]
+    new_password = request.form["new_password"]
+    confirm_password = request.form["confirm_password"]
+
+    if not check_password_hash(
+        user.password,
+        old_password
+    ):
+        return "Current Password Incorrect"
+
+    if new_password != confirm_password:
+        return "Passwords Do Not Match"
+
+    user.password = generate_password_hash(
+        new_password
+    )
+
+    db.session.commit()
+
+    return redirect("/settings")
+
+@app.route("/change_email", methods=["POST"])
+def change_email():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    new_email = request.form["new_email"]
+
+    existing_user = User.query.filter_by(
+        email=new_email
+    ).first()
+
+    if existing_user:
+        return "Email already exists"
+
+    user = User.query.get(
+        session["user_id"]
+    )
+
+    user.email = new_email
+
+    db.session.commit()
+    return redirect("/settings")
+
+@app.route("/deactivate_account")
+def deactivate_account():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(
+        session["user_id"]
+    )
+
+    user.is_active = False
+
+    db.session.commit()
+
+    session.clear()
+
+    return redirect("/login")
+
+@app.route("/confirm_delete_account")
+def confirm_delete_account():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    return render_template(
+        "confirm_delete.html"
+    )
+
+@app.route("/delete_account", methods=["POST"])
+def delete_account():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(session["user_id"])
+
+    password = request.form["password"]
+
+    if not check_password_hash(
+        user.password,
+        password
+    ):
+        return "Wrong Password"
+
+    Project.query.filter_by(
+        user_id=user.id
+    ).delete()
+
+    Skill.query.filter_by(
+        user_id=user.id
+    ).delete()
+
+    Education.query.filter_by(
+        user_id=user.id
+    ).delete()
+
+    Achievement.query.filter_by(
+        user_id=user.id
+    ).delete()
+
+    Experience.query.filter_by(
+        user_id=user.id
+    ).delete()
+
+    Resume.query.filter_by(
+        user_id=user.id
+    ).delete()
+
+    Certificate.query.filter_by(
+        user_id=user.id
+    ).delete()
+
+    AboutMe.query.filter_by(
+        user_id=user.id
+    ).delete()
+
+    SocialLink.query.filter_by(
+        user_id=user.id
+    ).delete()
+
+    db.session.delete(user)
+
+    db.session.commit()
+
+    session.clear()
+
+    return render_template(
+    "success.html",
+    message="Account Deleted Successfully",
+    redirect_url="/register"
+)
+
+@app.route("/user/<username>")
+def public_profile(username):
+
+    user = User.query.filter_by(
+        name=username
+    ).first()
+
+    if not user:
+        return "User Not Found"
+
+    return render_template(
+        "public_profile.html",
+        user=user
+    )
+
+@app.route("/terms")
+def terms():
+
+    return render_template(
+        "terms.html"
+    )
+
+@app.route("/feedback", methods=["GET", "POST"])
+def feedback():
+
+    if request.method == "POST":
+
+        new_feedback = Feedback(
+
+            name=request.form["name"],
+
+            email=request.form["email"],
+
+            message=request.form["message"]
+
+        )
+
+        db.session.add(new_feedback)
+
+        db.session.commit()
+
+        return "Feedback Submitted Successfully ✅"
+
+    return render_template(
+        "feedback.html"
+    )
+
+@app.route("/all_feedback")
+def all_feedback():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(session["user_id"])
+
+    if user.email != "pankajraj2025434@gmail.com":
+        return "Access Denied ❌"
+    feedbacks = Feedback.query.all()
+
+    return render_template(
+        "all_feedback.html",
+        feedbacks=feedbacks
+    )
+
+@app.route("/admin")
+def admin():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(session["user_id"])
+
+    if user.email != "pankajraj2025434@gmail.com":
+        return "Access Denied ❌"
+    users = User.query.all()
+
+    projects = Project.query.all()
+
+    feedbacks = Feedback.query.all()
+
+    return render_template(
+        "admin.html",
+        users=users,
+        projects=projects,
+        feedbacks=feedbacks
+    )
+
+@app.route("/reply_feedback/<int:id>", methods=["POST"])
+def reply_feedback(id):
+
+    feedback = Feedback.query.get_or_404(id)
+
+    feedback.reply = request.form["reply"]
+
+    db.session.commit()
+
+    return redirect("/all_feedback")
+
+@app.route("/feedback_chat/<int:id>")
+def feedback_chat(id):
+
+    feedback = Feedback.query.get_or_404(id)
+
+    messages = FeedbackMessage.query.filter_by(
+        feedback_id=id
+    ).all()
+
+    return render_template(
+        "feedback_chat.html",
+        feedback=feedback,
+        messages=messages
+    )
+
+@app.route(
+    "/user_reply/<int:id>",
+    methods=["POST"]
+)
+def user_reply(id):
+
+    msg = FeedbackMessage(
+
+        feedback_id=id,
+
+        sender="User",
+
+        message=request.form["message"]
+
+    )
+
+    db.session.add(msg)
+
+    db.session.commit()
+
+    return redirect(
+        f"/feedback_chat/{id}"
+    )
+
+@app.route(
+    "/admin_reply/<int:id>",
+    methods=["POST"]
+)
+def admin_reply(id):
+
+    msg = FeedbackMessage(
+
+        feedback_id=id,
+
+        sender="Admin",
+
+        message=request.form["message"]
+
+    )
+
+    db.session.add(msg)
+
+    db.session.commit()
+
+    return redirect(
+        f"/feedback_chat/{id}"
+    )
+
+@app.route("/my_feedback")
+def my_feedback():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    feedbacks = Feedback.query.filter_by(
+        email=User.query.get(session["user_id"]).email
+    ).all()
+
+    return render_template(
+        "my_feedback.html",
+        feedbacks=feedbacks
+    )
 
 if __name__ == "__main__":
     with app.app_context():

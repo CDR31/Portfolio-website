@@ -1,0 +1,17 @@
+<h1>My Feedback</h1>
+
+{% for feedback in feedbacks %}
+
+<p>
+<strong>Your Feedback:</strong>
+{{ feedback.message }}
+</p>
+
+<p>
+<strong>Admin Reply:</strong>
+{{ feedback.reply }}
+</p>
+
+<hr>
+
+{% endfor %}

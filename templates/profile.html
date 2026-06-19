@@ -7,6 +7,12 @@
 
 <body>
 
+<a href="/dashboard" class="btn btn-primary">
+🏠 Dashboard
+</a>
+
+<hr>
+
 <h1>My Profile</h1>
 
 <h2>{{ user.name }}</h2>
@@ -200,5 +206,445 @@ Upload Certificate
 </a>
 
 </p>
+
+{% endfor %}
+
+<h2>Fill Education</h2>
+
+<form action="/add_education"
+      method="POST"
+      enctype="multipart/form-data">
+
+<input type="text" name="level" placeholder="10th / 12th / Graduation">
+
+<input type="text" name="institute" placeholder="School / College">
+
+<input type="text" name="board_university" placeholder="Board / University">
+
+<input type="text" name="stream_degree" placeholder="Stream / Degree">
+
+<input type="text" name="score" placeholder="Percentage / CGPA">
+
+<input type="text" name="passing_year" placeholder="Passing Year">
+
+<input type="text" name="subjects" placeholder="Subjects">
+
+<input type="text" name="city" placeholder="City">
+
+<input type="text" name="state" placeholder="State">
+
+<input type="text" name="rank" placeholder="Rank (Optional)">
+
+<textarea
+name="achievements"
+placeholder="Achievements">
+</textarea>
+
+<label>Certificate</label>
+<input type="file" name="certificate">
+
+<label>Marksheet</label>
+<input type="file" name="marksheet">
+
+<button type="submit">
+Add Education
+</button>
+
+</form>
+
+<h2>Education</h2>
+
+<h3>My Education</h3>
+{% for edu in educations %}
+
+<p>
+
+🎓 {{ edu.level }}
+
+<br>
+
+🏫 {{ edu.institute }}
+
+<br>
+
+📚 {{ edu.board_university }}
+
+<br>
+
+📖 {{ edu.stream_degree }}
+
+<br>
+
+⭐ {{ edu.score }}
+
+<br>
+
+📅 {{ edu.passing_year }}
+
+<br>
+
+📘 {{ edu.subjects }}
+
+<br>
+
+📍 {{ edu.city }}, {{ edu.state }}
+
+<br>
+
+🏆 {{ edu.achievements }}
+
+<br><br>
+
+{% if edu.certificate_file %}
+
+<a href="{{ url_for(
+'static',
+filename='education_files/' + edu.certificate_file
+) }}"
+target="_blank">
+
+📜 View Certificate
+
+</a>
+
+|
+
+<a href="{{ url_for(
+'static',
+filename='education_files/' + edu.certificate_file
+) }}"
+download>
+
+⬇️ Download Certificate
+
+</a>
+
+{% endif %}
+
+<br><br>
+
+{% if edu.marksheet_file %}
+
+<a href="{{ url_for(
+'static',
+filename='education_files/' + edu.marksheet_file
+) }}"
+target="_blank">
+
+📄 View Marksheet
+
+</a>
+
+|
+
+<a href="{{ url_for(
+'static',
+filename='education_files/' + edu.marksheet_file
+) }}"
+download>
+
+⬇️ Download Marksheet
+
+</a>
+
+{% endif %}
+
+<br><br>
+
+<a href="/delete_education/{{ edu.id }}">
+❌ Delete Education
+</a>
+
+</p>
+
+<hr>
+
+{% endfor %}
+
+<h2>About Me</h2>
+
+<form action="/add_about" method="POST">
+
+<textarea
+name="bio"
+placeholder="Write About Yourself"
+rows="5"
+cols="50">{% if about %}{{ about.bio }}{% endif %}</textarea>
+
+<br><br>
+
+<textarea
+name="career_goal"
+placeholder="Career Goal"
+rows="4"
+cols="50">{% if about %}{{ about.career_goal }}{% endif %}</textarea>
+
+<br><br>
+
+<textarea
+name="hobbies"
+placeholder="Hobbies"
+rows="3"
+cols="50">{% if about %}{{ about.hobbies }}{% endif %}</textarea>
+
+<br><br>
+
+<button type="submit">
+Save About Me
+</button>
+
+</form>
+
+{% if about %}
+
+<h3>My Introduction</h3>
+
+<p>
+👤 {{ about.bio }}
+</p>
+
+<p>
+🎯 {{ about.career_goal }}
+</p>
+
+<p>
+🎮 {{ about.hobbies }}
+
+<a href="/delete_about">
+❌ Delete About Me
+</a>
+
+</p>
+
+{% endif %}
+
+<h2>Social Links</h2>
+
+<form action="/add_social" method="POST">
+
+<input type="text"
+       name="github"
+       placeholder="GitHub URL">
+
+<input type="text"
+       name="linkedin"
+       placeholder="LinkedIn URL">
+
+<input type="text"
+       name="leetcode"
+       placeholder="LeetCode URL">
+
+<input type="text"
+       name="codechef"
+       placeholder="CodeChef URL">
+
+<input type="text"
+       name="codeforces"
+       placeholder="Codeforces URL">
+
+<button type="submit">
+Save Links
+</button>
+
+</form>
+
+{% if social %}
+
+<h3>My Profiles</h3>
+
+<a href="{{ social.github }}" target="_blank">
+GitHub
+</a>
+
+<br>
+
+<a href="{{ social.linkedin }}" target="_blank">
+LinkedIn
+</a>
+
+<br>
+
+<a href="{{ social.leetcode }}" target="_blank">
+LeetCode
+</a>
+
+<br>
+
+<a href="{{ social.codechef }}" target="_blank">
+CodeChef
+</a>
+
+<br>
+
+<a href="{{ social.codeforces }}" target="_blank">
+Codeforces
+</a>
+
+<br><br>
+
+<a href="/delete_social">
+❌ Delete Social Links
+</a>
+
+{% endif %}
+
+<h2>Achievements</h2>
+
+<form
+action="/add_achievement"
+method="POST"
+enctype="multipart/form-data">
+
+<input
+type="text"
+name="title"
+placeholder="Achievement Title">
+
+<textarea
+name="description"
+placeholder="Description">
+</textarea>
+
+<input
+type="file"
+name="achievement_file">
+
+<button type="submit">
+Add Achievement
+</button>
+
+</form>
+
+<h3>My Achievements</h3>
+
+{% for achievement in achievements %}
+
+<p>
+
+🏆 {{ achievement.title }}
+
+<br>
+
+{{ achievement.description }}
+
+</p>
+
+{% if achievement.achievement_file %}
+
+<a href="{{ url_for(
+'static',
+filename='achievements/' + achievement.achievement_file
+) }}"
+target="_blank">
+
+View Certificate
+
+</a>
+
+|
+
+<a href="{{ url_for(
+'static',
+filename='achievements/' + achievement.achievement_file
+) }}"
+download>
+
+Download Certificate
+
+</a>
+
+{% endif %}
+
+<br><br>
+
+<a href="/delete_achievement/{{ achievement.id }}">
+❌ Delete Achievement
+</a>
+
+<hr>
+
+{% endfor %}
+
+<h2>Experience</h2>
+
+<form
+action="/add_experience"
+method="POST"
+enctype="multipart/form-data">
+
+<input
+type="text"
+name="company"
+placeholder="Company Name">
+
+<input
+type="text"
+name="role"
+placeholder="Role">
+
+<input
+type="text"
+name="duration"
+placeholder="Jan 2026 - Mar 2026">
+
+<textarea
+name="description"
+placeholder="Describe your work">
+</textarea>
+
+<input
+type="file"
+name="certificate">
+
+<button type="submit">
+Add Experience
+</button>
+
+</form>
+
+<h2 id="experience">Experience</h2>
+<h3>My Experience</h3>
+
+{% for exp in experiences %}
+
+<p>
+
+🏢 {{ exp.company }}
+
+<br>
+
+💼 {{ exp.role }}
+
+<br>
+
+📅 {{ exp.duration }}
+
+<br>
+
+📝 {{ exp.description }}
+
+</p>
+
+{% if exp.certificate_file %}
+
+<a href="{{ url_for(
+'static',
+filename='experiences/' + exp.certificate_file
+) }}"
+target="_blank">
+
+View Certificate
+
+</a>
+
+{% endif %}
+
+<br><br>
+
+<a href="/delete_experience/{{ exp.id }}">
+❌ Delete Experience
+</a>
+
+<hr>
 
 {% endfor %}
