@@ -3,10 +3,11 @@ import os
 from flask import Flask, render_template, request, session, redirect,send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime,UTC
+from datetime import datetime
 
 
 app = Flask(__name__)
+ADMIN_EMAIL = "pankajraj2025434@gmail.com"
 
 @app.after_request
 def add_header(response):
@@ -20,7 +21,10 @@ def add_header(response):
 
     return response
 
-app.secret_key = "pankaj_portfolio_secret_2026"
+app.secret_key = os.environ.get(
+    "SECRET_KEY",
+    "pankaj_portfolio_secret_2026"
+)
 
 app.config["UPLOAD_FOLDER"] = os.path.join(
     app.root_path,
@@ -370,6 +374,10 @@ class Feedback(db.Model):
     reply = db.Column(
         db.Text
     )
+    user_id = db.Column(
+        db.Integer)
+
+
 
 class FeedbackMessage(db.Model):
 
@@ -401,9 +409,6 @@ class Activity(db.Model):
 
     activity = db.Column(db.String(200))
 
-
-    
-
 @app.route("/upload_resume", methods=["POST"])
 def upload_resume():
 
@@ -415,9 +420,7 @@ def upload_resume():
     if file.filename == "":
         return "Please select a resume"
 
-    filename = secure_filename(
-        file.filename
-    )
+    filename = f"{session['user_id']}_{secure_filename(file.filename)}"
 
     os.makedirs(
         app.config["RESUME_FOLDER"],
@@ -529,11 +532,11 @@ def dashboard():
     ).all()
 
     social = SocialLink.query.filter_by(
-    user_id=session["user_id"]
+        user_id=session["user_id"]
     ).first()
 
     activities = Activity.query.filter_by(
-    user_id=session["user_id"]
+        user_id=session["user_id"]
     ).all()
 
     completion = 0
@@ -562,6 +565,17 @@ def dashboard():
     if social:
         completion += 10
 
+    from datetime import datetime
+
+    hour = datetime.now().hour
+
+    if hour < 12:
+        greeting = "Good Morning"
+    elif hour < 17:
+        greeting = "Good Afternoon"
+    else:
+        greeting = "Good Evening"
+
     return render_template(
         "dashboard.html",
         username=session["user_name"],
@@ -575,7 +589,8 @@ def dashboard():
         user=user,
         resume=resume,
         completion=completion,
-        activities=activities
+        activities=activities,
+        greeting=greeting
     )
 
 @app.route("/add_project", methods=["GET", "POST"])
@@ -676,6 +691,7 @@ def projects():
     if search:
 
         all_projects = Project.query.filter(
+            Project.user_id == session["user_id"],
             Project.title.contains(search)
         ).all()
 
@@ -690,20 +706,16 @@ def projects():
         projects=all_projects
     )
 
-@app.route("/resume")
-def resume():
-
-    return send_from_directory(
-        "static/resume",
-        "DSA_CompleteNotes.pdf",
-        as_attachment=True
-    )
-
 @app.route("/messages")
 def messages():
 
     if "user_id" not in session:
         return redirect("/login")
+
+    user = User.query.get(session["user_id"])
+
+    if user.email != ADMIN_EMAIL:
+        return "Access Denied ❌"
 
     all_messages = ContactMessage.query.all()
 
@@ -719,6 +731,9 @@ def edit_project(id):
         return redirect("/login")
 
     project = Project.query.get_or_404(id)
+
+    if project.user_id != session["user_id"]:
+        return "Access Denied"
 
     if request.method == "POST":
 
@@ -759,6 +774,9 @@ def project_detail(id):
         return redirect("/login")
 
     project = Project.query.get_or_404(id)
+
+    if project.user_id != session["user_id"]:
+        return "Access Denied"
 
     return render_template(
         "project_detail.html",
@@ -878,7 +896,7 @@ def upload_photo():
     if file.filename == "":
         return "Please select a file"
 
-    filename = secure_filename(file.filename)
+    filename = f"{session['user_id']}_{secure_filename(file.filename)}"
 
     os.makedirs(
         app.config["UPLOAD_FOLDER"],
@@ -913,7 +931,7 @@ def upload_certificate():
     if file.filename == "":
         return "Please select a certificate"
 
-    filename = secure_filename(file.filename)
+    filename = f"{session['user_id']}_{secure_filename(file.filename)}"
 
     os.makedirs(
         app.config["CERTIFICATE_FOLDER"],
@@ -947,7 +965,18 @@ def delete_certificate(id):
     if certificate.user_id != session["user_id"]:
         return "Access Denied"
 
+    if certificate.filename:
+
+        filepath = os.path.join(
+            app.config["CERTIFICATE_FOLDER"],
+            certificate.filename
+        )
+
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
     db.session.delete(certificate)
+
     db.session.commit()
 
     return redirect("/profile")
@@ -989,7 +1018,17 @@ def delete_resume():
     ).first()
 
     if resume:
+
+        filepath = os.path.join(
+            app.config["RESUME_FOLDER"],
+            resume.filename
+        )
+
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
         db.session.delete(resume)
+
         db.session.commit()
 
     return redirect("/profile")
@@ -1047,9 +1086,7 @@ def add_education():
 
     if certificate.filename != "":
 
-        certificate_name = secure_filename(
-            certificate.filename
-        )
+        certificate_name = f"{session['user_id']}_{secure_filename(certificate.filename)}"
 
         certificate.save(
             os.path.join(
@@ -1060,9 +1097,7 @@ def add_education():
 
     if marksheet.filename != "":
 
-        marksheet_name = secure_filename(
-            marksheet.filename
-        )
+        marksheet_name = f"{session['user_id']}_{secure_filename(marksheet.filename)}"
 
         marksheet.save(
             os.path.join(
@@ -1227,9 +1262,7 @@ def add_achievement():
 
     if file.filename != "":
 
-        filename = secure_filename(
-            file.filename
-        )
+        filename = f"{session['user_id']}_{secure_filename(file.filename)}"
 
         file.save(
             os.path.join(
@@ -1295,9 +1328,7 @@ def add_experience():
 
     if file.filename != "":
 
-        filename = secure_filename(
-            file.filename
-        )
+        filename = f"{session['user_id']}_{secure_filename(file.filename)}"
 
         file.save(
             os.path.join(
@@ -1494,6 +1525,10 @@ def delete_account():
         user_id=user.id
     ).delete()
 
+    Feedback.query.filter_by(
+    email=user.email
+    ).delete()
+
     db.session.delete(user)
 
     db.session.commit()
@@ -1531,17 +1566,19 @@ def terms():
 @app.route("/feedback", methods=["GET", "POST"])
 def feedback():
 
+    if "user_id" not in session:
+        return redirect("/login")
+
     if request.method == "POST":
 
+        user = User.query.get(session["user_id"])
+
         new_feedback = Feedback(
-
-            name=request.form["name"],
-
-            email=request.form["email"],
-
-            message=request.form["message"]
-
-        )
+    name=user.name,
+    email=user.email,
+    message=request.form["message"],
+    user_id=user.id
+    )
 
         db.session.add(new_feedback)
 
@@ -1561,8 +1598,9 @@ def all_feedback():
 
     user = User.query.get(session["user_id"])
 
-    if user.email != "pankajraj2025434@gmail.com":
+    if user.email != ADMIN_EMAIL:
         return "Access Denied ❌"
+
     feedbacks = Feedback.query.all()
 
     return render_template(
@@ -1575,11 +1613,12 @@ def admin():
 
     if "user_id" not in session:
         return redirect("/login")
-
+    
     user = User.query.get(session["user_id"])
 
-    if user.email != "pankajraj2025434@gmail.com":
+    if user.email != ADMIN_EMAIL:
         return "Access Denied ❌"
+    
     users = User.query.all()
 
     projects = Project.query.all()
@@ -1596,6 +1635,14 @@ def admin():
 @app.route("/reply_feedback/<int:id>", methods=["POST"])
 def reply_feedback(id):
 
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(session["user_id"])
+
+    if user.email != ADMIN_EMAIL:
+        return "Access Denied ❌"
+
     feedback = Feedback.query.get_or_404(id)
 
     feedback.reply = request.form["reply"]
@@ -1607,6 +1654,14 @@ def reply_feedback(id):
 @app.route("/feedback_chat/<int:id>")
 def feedback_chat(id):
 
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(session["user_id"])
+
+    if user.email != ADMIN_EMAIL:
+        return "Access Denied ❌"
+    
     feedback = Feedback.query.get_or_404(id)
 
     messages = FeedbackMessage.query.filter_by(
@@ -1618,12 +1673,18 @@ def feedback_chat(id):
         feedback=feedback,
         messages=messages
     )
-
-@app.route(
-    "/user_reply/<int:id>",
-    methods=["POST"]
-)
+@app.route("/user_reply/<int:id>", methods=["POST"])
 def user_reply(id):
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    feedback = Feedback.query.get_or_404(id)
+
+    user = User.query.get(session["user_id"])
+
+    if feedback.email != user.email:
+        return "Access Denied ❌"
 
     msg = FeedbackMessage(
 
@@ -1643,29 +1704,29 @@ def user_reply(id):
         f"/feedback_chat/{id}"
     )
 
-@app.route(
-    "/admin_reply/<int:id>",
-    methods=["POST"]
-)
+@app.route("/admin_reply/<int:id>", methods=["POST"])
 def admin_reply(id):
 
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(session["user_id"])
+
+    feedback = Feedback.query.get_or_404(id)
+
+    if feedback.email != user.email and user.email != ADMIN_EMAIL:
+        return "Access Denied ❌"
+
     msg = FeedbackMessage(
-
         feedback_id=id,
-
         sender="Admin",
-
         message=request.form["message"]
-
     )
 
     db.session.add(msg)
-
     db.session.commit()
 
-    return redirect(
-        f"/feedback_chat/{id}"
-    )
+    return redirect(f"/feedback_chat/{id}")
 
 @app.route("/my_feedback")
 def my_feedback():
@@ -1673,8 +1734,10 @@ def my_feedback():
     if "user_id" not in session:
         return redirect("/login")
 
+    user = User.query.get(session["user_id"])
+
     feedbacks = Feedback.query.filter_by(
-        email=User.query.get(session["user_id"]).email
+        email=user.email
     ).all()
 
     return render_template(

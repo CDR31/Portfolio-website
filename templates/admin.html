@@ -1,7 +1,49 @@
-<h1>Admin Dashboard</h1>
+<a href="/dashboard" class="btn btn-top-btn">
+    🏠 Dashboard
+</a>
 
-<h3>Total Users: {{ users|length }}</h3>
+<br><br>
 
-<h3>Total Projects: {{ projects|length }}</h3>
+<section class="hero-banner">
 
-<h3>Total Feedback: {{ feedbacks|length }}</h3>
+    <h1>🛠 Admin Dashboard</h1>
+
+    <p>
+        Manage users, projects and feedback.
+    </p>
+
+</section>
+
+<div class="dashboard-stats">
+
+    <div class="project-card">
+
+        <h3>👥 Users</h3>
+
+        <p>
+            {{ users|length }}
+        </p>
+
+    </div>
+
+    <div class="project-card">
+
+        <h3>📁 Projects</h3>
+
+        <p>
+            {{ projects|length }}
+        </p>
+
+    </div>
+
+    <div class="project-card">
+
+        <h3>📝 Feedback</h3>
+
+        <p>
+            {{ feedbacks|length }}
+        </p>
+
+    </div>
+
+</div>

@@ -1,42 +1,41 @@
-<h1>All Feedback</h1>
-
-{% for feedback in feedbacks %}
-
-<p>
-
-<strong>Name:</strong>
-
-{{ feedback.name }}
-
-</p>
-
-<p>
-
-<strong>Message:</strong>
-
-{{ feedback.message }}
-
-</p>
-
-<form
-action="/reply_feedback/{{ feedback.id }}"
-method="POST">
-
-<textarea
-name="reply"
-placeholder="Write Reply">
-</textarea>
+<a href="/dashboard" class="btn page-top-btn">
+    🏠 Dashboard
+</a>
 
 <br><br>
 
-<button type="submit">
+<h1>All Feedback</h1>
+{% for feedback in feedbacks %}
 
-Send Reply
+<div class="project-card">
 
-</button>
+    <h3>👤 {{ feedback.name }}</h3>
 
-</form>
+    <p>
+        📧 {{ feedback.email }}
+    </p>
 
-<hr>
+    <p>
+        📝 {{ feedback.message }}
+    </p>
+
+    <form
+    action="/reply_feedback/{{ feedback.id }}"
+    method="POST">
+
+        <textarea
+        name="reply"
+        placeholder="Write Reply">
+        </textarea>
+
+        <br><br>
+
+        <button type="submit">
+            Send Reply
+        </button>
+
+    </form>
+
+</div>
 
 {% endfor %}

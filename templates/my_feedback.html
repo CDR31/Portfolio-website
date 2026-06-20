@@ -1,17 +1,28 @@
+<a href="/dashboard" class="btn page-top-btn">
+    🏠 Dashboard
+</a>
+
+<br><br>
 <h1>My Feedback</h1>
 
 {% for feedback in feedbacks %}
 
-<p>
-<strong>Your Feedback:</strong>
-{{ feedback.message }}
-</p>
+<div class="project-card">
 
-<p>
-<strong>Admin Reply:</strong>
-{{ feedback.reply }}
-</p>
+    <h3>📝 Your Feedback</h3>
 
-<hr>
+    <p>
+        {{ feedback.message }}
+    </p>
+
+    <hr>
+
+    <h3>💬 Admin Reply</h3>
+
+    <p>
+        {{ feedback.reply if feedback.reply else "No reply yet" }}
+    </p>
+
+</div>
 
 {% endfor %}

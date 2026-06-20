@@ -37,30 +37,6 @@
 
             <a href="/settings">Settings</a>
 
-            <a href="/feedback">Feedback</a>
-
-            <a href="/my_feedback">My Feedback</a>
-
-            <!-- <a href="/all_feedback">View Feedback</a> -->
-
-            {% if session["user_name"] == "Pankaj" %}
-            <a href="/all_feedback">
-            View Feedback
-            
-            </a>
-
-            {% endif %}
-
-            {% if session["user_name"] == "Pankaj Rajpoot" %}
-
-            <a href="/admin">
-
-            🛠 Admin Panel
-
-            </a>
-
-            {% endif %}
-
             <a href="/logout">Logout</a>
 
         </div>
@@ -71,10 +47,20 @@
 
     <section class="hero">
 
-    <h1>Hello, I'm Pankaj</h1>
+    <h1>
+    {{ greeting }}, {{ user.name }} 👋
+    </h1>
+
+    {% if user.profile_photo %}
+
+    <img
+    src="{{ url_for('static', filename='profile_photos/' + user.profile_photo) }}"
+    class="profile-photo">
+
+    {% endif %}
 
     <p>
-        Aspiring Data Scientist & Python Developer
+        Manage your portfolio, projects, skills and achievements etc.
     </p>
 
     <h3>Complete Your Profile</h3>
@@ -133,9 +119,29 @@
 
     <br>
 
-    <a href="/projects" class="btn">
-        View Projects
+    </section>
+
+    <section class="dashboard-links">
+
+    <a href="/feedback" class="project-card">
+    📝 Feedback
     </a>
+
+    <a href="/my_feedback" class="project-card">
+    📋 My Feedback
+    </a>
+
+    {% if user.email == "pankajraj2025434@gmail.com" %}
+
+    <a href="/all_feedback" class="project-card">
+    👀 View Feedback
+    </a>
+
+    <a href="/admin" class="project-card">
+    🛠 Admin Panel
+    </a>
+
+    {% endif %}
 
 </section>
 
@@ -157,7 +163,7 @@
 
 <section class="dashboard-stats">
 
-    <h2>My Statistics</h2>
+    <h2>{{ user.name }}'s Statistics</h2>
 
     <div class="project-card">
         <h3>Projects</h3>
@@ -187,77 +193,32 @@
 
         <h2>My Skills</h2>
 
-        <div class="skill-card">Python</div>
+        {% for skill in skills %}
 
-        <div class="skill-card">SQL</div>
+        <div class="skill-card">
+            {{ skill.name }}
+        </div>
 
-        <div class="skill-card">Flask</div>
-
-        <div class="skill-card">Pandas</div>
-
-        <div class="skill-card">Machine Learning</div>
+        {% endfor %}
 
     </section>
+</section>
 
     <section class="projects-showcase">
 
         <h2>Featured Projects</h2>
 
-        <div class="project-card">
-
-            <h3>Customer Churn Prediction</h3>
-
-            <p>
-                Machine Learning model that predicts customer churn.
-            </p>
-
-        </div>
+        {% for project in projects %}
 
         <div class="project-card">
 
-            <h3>House Price Prediction</h3>
+            <h3>{{ project.title }}</h3>
 
-            <p>
-                Predicting house prices using regression techniques.
-            </p>
+            <p>{{ project.description }}</p>
 
         </div>
 
-        <div class="project-card">
-
-            <h3>Sales Forecasting</h3>
-
-            <p>
-                Forecasting future sales using historical data.
-            </p>
-
-        </div>
-
-    </section>
-
-    <section class="contact">
-
-        <h2>Contact Me</h2>
-
-        <p>
-            Visit Email: pankajraj2025434@gmail.com
-        </p>
-
-        <p>
-            Visit GitHub: 
-            <a href="https://github.com/CDR31"
-                target="_blank">
-                🧷
-            </a>
-        </p>
-
-        <p>
-            Visit LinkedIn:
-            <a href="https://www.linkedin.com/in/pankaj-rajpoot-12b299324/"
-                target="_blank">
-                🌐
-            </a>
-        </p>
+        {% endfor %}
 
     </section>
 
@@ -266,12 +227,25 @@
         <hr>
 
         <p>
-            © 2026 Pankaj Portfolio
-        </p>
+            © 2026 {{ user.name }} Portfolio
+                </p>
 
-    </footer>
+<footer>
+
+    <hr>
+
+    <h3>
+        {{ user.name }} Portfolio
+    </h3>
+
+    <p>
+        Built with Flask, SQLAlchemy and Python
+    </p>
+
+</footer>
 
 </div>
 
 </body>
+
 </html>

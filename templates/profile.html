@@ -2,7 +2,13 @@
 <html>
 
 <head>
+
     <title>Profile</title>
+
+    <link rel="stylesheet"
+    href="{{ url_for('static',
+    filename='css/style.css') }}">
+
 </head>
 
 <body>
@@ -13,15 +19,32 @@
 
 <hr>
 
-<h1>My Profile</h1>
+<section class="hero-banner">
 
-<h2>{{ user.name }}</h2>
+    <h1>Welcome, {{ user.name }} 👋</h1>
 
-<p>{{ user.email }}</p>
+    <p>
+        Manage your portfolio and showcase your achievements.
+    </p>
 
-</body>
+</section>
 
-</html>
+<div class="profile-header">
+
+    {% if user.profile_photo %}
+
+    <img
+    src="{{ url_for('static',
+    filename='profile_photos/' + user.profile_photo) }}"
+    class="profile-photo">
+
+    {% endif %}
+
+    <h1>{{ user.name }}</h1>
+
+    <p>{{ user.email }}</p>
+
+</div>
 
 <form action="/upload_photo"
       method="POST"
@@ -38,11 +61,6 @@
 </form>
 
 {% if user.profile_photo %}
-
-<img
-src="{{ url_for('static',
-filename='profile_photos/' + user.profile_photo) }}"
-width="200">
 
 <br><br>
 
@@ -519,15 +537,17 @@ Add Achievement
 
 {% for achievement in achievements %}
 
-<p>
+<div class="project-card">
 
-🏆 {{ achievement.title }}
+    <h3>
+        🏆 {{ achievement.title }}
+    </h3>
 
-<br>
+    <p>
+        {{ achievement.description }}
+    </p>
 
-{{ achievement.description }}
-
-</p>
+</div>
 
 {% if achievement.achievement_file %}
 
@@ -648,3 +668,7 @@ View Certificate
 <hr>
 
 {% endfor %}
+
+</body>
+
+</html>

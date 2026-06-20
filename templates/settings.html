@@ -1,80 +1,113 @@
 <!DOCTYPE html>
+
 <html>
 
 <head>
-    <title>Settings</title>
+
+```
+<title>Settings</title>
+
+<link rel="stylesheet"
+href="{{ url_for('static',
+filename='css/style.css') }}">
+```
+
 </head>
 
 <body>
 
-<a href="/dashboard" class="btn btn-primary">
-🏠 Dashboard
+<div class="container">
+
+```
+<a href="/dashboard" class="btn page-top-btn">
+    🏠 Dashboard
 </a>
 
 <hr>
 
-<h1>Settings</h1>
+<h1>⚙️ Settings</h1>
 
-<h2>Change Password</h2>
+<div class="dashboard-stats">
 
-<form action="/change_password" method="POST">
+    <div class="project-card">
 
-<input
-type="password"
-name="old_password"
-placeholder="Current Password">
+        <h2>🔒 Change Password</h2>
 
-<br><br>
+        <form action="/change_password" method="POST">
 
-<input
-type="password"
-name="new_password"
-placeholder="New Password">
+            <input
+            type="password"
+            name="old_password"
+            placeholder="Current Password">
 
-<br><br>
+            <input
+            type="password"
+            name="new_password"
+            placeholder="New Password">
 
-<input
-type="password"
-name="confirm_password"
-placeholder="Confirm Password">
+            <input
+            type="password"
+            name="confirm_password"
+            placeholder="Confirm Password">
 
-<br><br>
+            <button type="submit">
+                Change Password
+            </button>
 
-<button type="submit">
-Change Password
-</button>
+        </form>
 
-</form>
+    </div>
+
+    <div class="project-card">
+
+        <h2>📧 Change Email</h2>
+
+        <form action="/change_email" method="POST">
+
+            <input
+            type="email"
+            name="new_email"
+            placeholder="New Email">
+
+            <button type="submit">
+                Change Email
+            </button>
+
+        </form>
+
+    </div>
+
+    <div class="project-card">
+
+        <h2>🟡 Account Management</h2>
+
+        <a href="/deactivate_account"
+           class="btn">
+
+            Deactivate Account
+
+        </a>
+
+    </div>
+
+    <div class="project-card">
+
+        <h2>⚠️ Danger Zone</h2>
+
+        <a href="/confirm_delete_account"
+           class="btn">
+
+            Delete Account
+
+        </a>
+
+    </div>
+
+</div>
+```
+
+</div>
 
 </body>
 
 </html>
-
-<h2>Change Email</h2>
-
-<form action="/change_email" method="POST">
-
-<input
-type="email"
-name="new_email"
-placeholder="New Email">
-
-<button type="submit">
-Change Email
-</button>
-
-</form>
-
-<h2>Account Management</h2>
-
-<a href="/deactivate_account">
-🟡 Deactivate Account
-</a>
-
-<br><br>
-
-<h2>Danger Zone</h2>
-
-<a href="/confirm_delete_account">
-⚠️ Permanently Delete Account
-</a>
