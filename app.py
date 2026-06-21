@@ -4,9 +4,37 @@ from flask import Flask, render_template, request, session, redirect,send_from_d
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import os
+import secrets
 
+from dotenv import load_dotenv
+from authlib.integrations.flask_client import OAuth
 
 app = Flask(__name__)
+load_dotenv()
+
+app.secret_key = os.environ.get(
+    "SECRET_KEY",
+    "pankaj_portfolio_secret_2026"
+)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///portfolio.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db = SQLAlchemy(app)
+
+oauth = OAuth(app)
+
+google = oauth.register(
+    name='google',
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url=
+    "https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={
+        "scope": "openid email profile"
+    }
+)
 ADMIN_EMAIL = "pankajraj2025434@gmail.com"
 
 @app.after_request
@@ -64,11 +92,11 @@ app.config["EXPERIENCE_FOLDER"] = os.path.join(
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///portfolio.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-db = SQLAlchemy(app)
-
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+
+    username = db.Column(db.String(100),unique=True)
 
     name = db.Column(db.String(100), nullable=False)
 
@@ -665,6 +693,7 @@ def register():
             return "Email already registered 🙌"
 
         new_user = User(
+            username=email.split("@")[0],
             name=name,
             email=email,
             password=password
@@ -852,6 +881,10 @@ def profile():
 
     skills = Skill.query.filter_by(
     user_id=session["user_id"]).all()
+
+    projects = Project.query.filter_by(
+    user_id=user.id
+    ).all()
 
     educations = Education.query.filter_by(
     user_id=session["user_id"]
@@ -1745,8 +1778,110 @@ def my_feedback():
         feedbacks=feedbacks
     )
 
-if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
+@app.route("/google_login")
+def google_login():
 
+    redirect_uri = "http://127.0.0.1:5000/google_callback"
+
+    return google.authorize_redirect(
+        redirect_uri
+    )
+
+@app.route("/google_callback")
+def google_callback():
+
+    token = google.authorize_access_token()
+
+    user_info = token["userinfo"]
+
+    email = user_info["email"]
+    name = user_info["name"]
+
+    user = User.query.filter_by(
+        email=email
+    ).first()
+
+    if not user:
+
+        random_password = generate_password_hash(
+            secrets.token_hex(16)
+        )
+
+        user = User(
+            username=email.split("@")[0],
+            name=name,
+            email=email,
+            password=random_password
+        )
+
+        db.session.add(user)
+        db.session.commit()
+
+    session["user_id"] = user.id
+    session["user_name"] = user.name
+
+    return redirect("/dashboard")
+
+@app.route("/portfolio/<username>")
+def public_portfolio(username):
+
+    user = User.query.filter_by(
+        username=username
+    ).first_or_404()
+
+    skills = Skill.query.filter_by(
+        user_id=user.id
+    ).all()
+
+    projects = Project.query.filter_by(
+    user_id=user.id
+    ).all()
+
+    certificates = Certificate.query.filter_by(
+    user_id=user.id
+    ).all()
+
+    experiences = Experience.query.filter_by(
+    user_id=user.id
+    ).all()
+
+    social = SocialLink.query.filter_by(
+    user_id=user.id
+    ).first()
+
+    return render_template(
+        "public_portfolio.html",
+        user=user,
+        skills=skills,
+        projects=projects,
+        certificates=certificates,
+        experiences=experiences,
+        social=social
+    )
+
+@app.route("/my_username")
+def my_username():
+
+    if "user_id" not in session:
+        return "Login First"
+
+    user = User.query.get(session["user_id"])
+
+    return f"""
+    Name: {user.name}<br>
+    Email: {user.email}<br>
+    Username: {user.username}
+    """
+
+@app.route("/share_profile")
+def share_profile():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(session["user_id"])
+
+    return redirect(f"/portfolio/{user.username}")
+
+if __name__ == "__main__":
     app.run(debug=True)

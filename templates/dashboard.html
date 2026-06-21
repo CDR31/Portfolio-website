@@ -37,6 +37,8 @@
 
             <a href="/settings">Settings</a>
 
+            <a href="/my_username">My Public Portfolio</a>
+
             <a href="/logout">Logout</a>
 
         </div>
@@ -222,21 +224,15 @@
 
     </section>
 
-    <footer>
-
-        <hr>
-
-        <p>
-            © 2026 {{ user.name }} Portfolio
-                </p>
-
-<footer>
-
     <hr>
 
-    <h3>
-        {{ user.name }} Portfolio
-    </h3>
+    <h2>
+        © 2026 {{ user.name }} Portfolio
+    </h2>
+
+    <button onclick="shareProfile()" class="btn btn-success">
+        🔗 Share Public Profile
+    </button>
 
     <p>
         Built with Flask, SQLAlchemy and Python
@@ -247,5 +243,31 @@
 </div>
 
 </body>
+
+<script>
+
+async function shareProfile() {
+
+    const profileUrl =
+        window.location.origin +
+        "/portfolio/{{ user.username }}";
+
+    if (navigator.share) {
+
+        await navigator.share({
+            title: "My Portfolio",
+            text: "Check out my portfolio",
+            url: profileUrl
+        });
+
+    } else {
+
+        navigator.clipboard.writeText(profileUrl);
+
+        alert("Portfolio link copied!");
+    }
+}
+
+</script>
 
 </html>
