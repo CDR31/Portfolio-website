@@ -19,6 +19,10 @@
             Student Service
         </div>
 
+        <button id="theme-toggle" class="theme-btn">
+            🌙
+        </button>
+
         <div class="nav-links">
 
             <a href="/dashboard">Home</a>
@@ -37,7 +41,7 @@
 
             <a href="/settings">Settings</a>
 
-            <a href="/my_username">My Public Portfolio</a>
+            <a href="/portfolio/{{ user.username }}"target="_blank">🌐 My Public Portfolio</a>
 
             <a href="/logout">Logout</a>
 
@@ -223,29 +227,101 @@
         {% endfor %}
 
     </section>
+<footer>
 
-    <hr>
+<hr>
 
-    <h2>
-        © 2026 {{ user.name }} Portfolio
-    </h2>
+<h2>
+    © 2026 {{ user.name }} Portfolio
+</h2>
 
-    <button onclick="shareProfile()" class="btn btn-success">
-        🔗 Share Public Profile
-    </button>
+<button onclick="shareProfile()" class="btn btn-success">
+    🔗 Share Public Profile
+</button>
 
-    <p>
-        Built with Flask, SQLAlchemy and Python
-    </p>
+<p>
+    Built with Flask, SQLAlchemy and Python
+</p>
 
 </footer>
 
 </div>
 
-</body>
-
 <script>
 
+const toggleBtn =
+document.getElementById("theme-toggle");
+
+if(toggleBtn){
+
+    if(localStorage.getItem("theme")==="dark"){
+
+        document.body.classList.add("dark-mode");
+
+        toggleBtn.innerHTML="☀️";
+    }
+
+    toggleBtn.addEventListener("click",()=>{
+
+        document.body.classList.toggle(
+            "light-mode"
+        );
+
+        if(document.body.classList.contains(
+            "light-mode"
+        )){
+
+            localStorage.setItem(
+                "theme",
+                "light"
+            );
+
+            toggleBtn.innerHTML="☀️";
+
+        }else{
+
+            localStorage.setItem(
+                "theme",
+                "dark"
+            );
+
+            toggleBtn.innerHTML="🌙";
+        }
+    });
+
+}
+
+const rain =
+document.getElementById("rain");
+
+    if(rain){
+
+        for(let i=0;i<120;i++){
+
+        const drop =
+        document.createElement("span");
+
+        drop.classList.add("drop");
+
+        drop.style.left =
+        Math.random()*100+"vw";
+
+        drop.style.animationDuration =
+        (Math.random()*2+1)+"s";
+
+        drop.style.animationDelay =
+        Math.random()*3+"s";
+
+        rain.appendChild(drop);
+    }
+}
+
+</script>
+
+</body>
+</html>
+
+<script>
 async function shareProfile() {
 
     const profileUrl =
@@ -267,7 +343,6 @@ async function shareProfile() {
         alert("Portfolio link copied!");
     }
 }
-
 </script>
 
-</html>
+</body>

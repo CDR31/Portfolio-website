@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-    <hr>
+<head>
 
     <title>Contact Me</title>
 
@@ -12,11 +12,13 @@
 </head>
 
 <body>
-    <a href="/dashboard" class="btn page-top-btn">
-    🏠 Dashboard
-    </a>
 
-    <hr>
+
+    {% if session.get("user_id") %}
+    <a href="/dashboard" class="btn page-top-btn">
+        🏠 Dashboard
+    </a>
+    {% endif %}
 
     <section class="hero-banner">
 
@@ -33,9 +35,12 @@
 
     <div class="form-card">
 
-        <h1>Contact Me</h1>
-
         <form method="POST">
+
+            <input
+                type="hidden"
+                name="owner_id"
+                value="{{ request.args.get('user') }}">
 
             <input
                 type="text"
@@ -69,27 +74,32 @@
 
             <p>
                 Email:
-                <a href="mailto:pankajraj2025434@gmail.com?subject=Portfolio Inquiry"
-                   class="btn">
-                   📩
+                <a href="mailto:{{ owner.email }}"
+                    class="btn">
+                    📩 Email
                 </a>
+
             
             </p>
 
             <p>
                 LinkedIn:
-                <a href="https://www.linkedin.com/in/pankaj-rajpoot-12b299324/"
-                   target="_blank">
-                    🔗
+                <a href="{{ social.linkedin }}"
+                    target="_blank"
+                    class="btn">
+                    🔗 LinkedIn
                 </a>
+
             </p>
 
             <p>
                 GitHub:
-                <a href="https://github.com/CDR31"
-                   target="_blank">
-                    🤖
+                <a href="{{ social.github }}"
+                    target="_blank"
+                    class="btn">
+                    🤖 GitHub
                 </a>
+
             </p>
 
         </div>

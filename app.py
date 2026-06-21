@@ -122,11 +122,7 @@ class Project(db.Model):
 
     github_link = db.Column(db.String(500))
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id")
-    )
-
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
 class ContactMessage(db.Model):
 
@@ -148,6 +144,11 @@ class ContactMessage(db.Model):
     message = db.Column(
         db.Text,
         nullable=False
+    )
+
+    receiver_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id")
     )
 
 class Resume(db.Model):
@@ -437,6 +438,23 @@ class Activity(db.Model):
 
     activity = db.Column(db.String(200))
 
+class PortfolioView(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id")
+    )
+
+    count = db.Column(
+        db.Integer,
+        default=0
+    )
+
 @app.route("/upload_resume", methods=["POST"])
 def upload_resume():
 
@@ -634,13 +652,16 @@ def add_project():
         description = request.form["description"]
         github_link = request.form["github_link"]
 
+        featured = "featured" in request.form
+
         project = Project(
-            title=title,
-            technology=technology,
-            description=description,
-            github_link=github_link,
-            user_id=session["user_id"]
-        )
+        title=title,
+        technology=technology,
+        description=description,
+        github_link=github_link,
+        featured=featured,
+        user_id=session["user_id"]
+    )
 
         activity = Activity(
 
@@ -650,11 +671,9 @@ def add_project():
 
 )
 
+        db.session.add(project)
         db.session.add(activity)
 
-        db.session.commit()
-
-        db.session.add(project)
         db.session.commit()
 
         return render_template(
@@ -741,16 +760,13 @@ def messages():
     if "user_id" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user_id"])
-
-    if user.email != ADMIN_EMAIL:
-        return "Access Denied ❌"
-
-    all_messages = ContactMessage.query.all()
+    user_messages = ContactMessage.query.filter_by(
+        receiver_id=session["user_id"]
+    ).all()
 
     return render_template(
         "messages.html",
-        messages=all_messages
+        messages=user_messages
     )
 
 @app.route("/edit_project/<int:id>", methods=["GET", "POST"])
@@ -820,34 +836,50 @@ def skills():
 def about():
     return render_template("about.html")
 
+
 @app.route("/contact", methods=["GET", "POST"])
 def contact():
+
+    owner_id = request.form.get("owner_id") or request.args.get("user")
+
+    owner = None
+    social = None
+
+    if owner_id:
+
+        owner = User.query.get(owner_id)
+
+        social = SocialLink.query.filter_by(
+            user_id=owner_id
+        ).first()
 
     if request.method == "POST":
 
         name = request.form["name"]
-
         email = request.form["email"]
-
         message = request.form["message"]
 
         new_message = ContactMessage(
             name=name,
             email=email,
-            message=message
+            message=message,
+            receiver_id=owner_id
         )
 
         db.session.add(new_message)
-
         db.session.commit()
 
         return render_template(
             "success.html",
             message="Message Sent Successfully 🎉",
-            redirect_url="/contact"
-)
+            redirect_url="/"
+        )
 
-    return render_template("contact.html")
+    return render_template(
+        "contact.html",
+        owner=owner,
+        social=social
+    )
 
 @app.route("/users")
 def users():
@@ -1792,7 +1824,9 @@ def google_callback():
 
     token = google.authorize_access_token()
 
-    user_info = token["userinfo"]
+    user_info = google.get(
+    "https://openidconnect.googleapis.com/v1/userinfo"
+    ).json()
 
     email = user_info["email"]
     name = user_info["name"]
@@ -1849,6 +1883,27 @@ def public_portfolio(username):
     user_id=user.id
     ).first()
 
+    resume = Resume.query.filter_by(
+    user_id=user.id
+    ).first()
+
+    view = PortfolioView.query.filter_by(
+    user_id=user.id
+    ).first()
+
+    if not view:
+
+        view = PortfolioView(
+        user_id=user.id,
+        count=0
+    )
+
+    db.session.add(view)
+
+    view.count += 1
+
+    db.session.commit()
+
     return render_template(
         "public_portfolio.html",
         user=user,
@@ -1856,7 +1911,9 @@ def public_portfolio(username):
         projects=projects,
         certificates=certificates,
         experiences=experiences,
-        social=social
+        social=social,
+        resume=resume,
+        views=view
     )
 
 @app.route("/my_username")
@@ -1883,5 +1940,11 @@ def share_profile():
 
     return redirect(f"/portfolio/{user.username}")
 
+
+            
 if __name__ == "__main__":
+
+    with app.app_context():
+        db.create_all()
+
     app.run(debug=True)
