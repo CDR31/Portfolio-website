@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, session, redirect,send_from_d
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from sqlalchemy import func
 import os
 import secrets
 
@@ -22,6 +23,21 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///portfolio.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+
+ALLOWED_EXTENSIONS = {
+    "png",
+    "jpg",
+    "jpeg",
+    "pdf"
+}
+
+def allowed_file(filename):
+
+    return (
+        "." in filename and
+        filename.rsplit(".", 1)[1].lower()
+        in ALLOWED_EXTENSIONS
+    )
 
 oauth = OAuth(app)
 
@@ -48,11 +64,6 @@ def add_header(response):
     response.headers["Expires"] = "0"
 
     return response
-
-app.secret_key = os.environ.get(
-    "SECRET_KEY",
-    "pankaj_portfolio_secret_2026"
-)
 
 app.config["UPLOAD_FOLDER"] = os.path.join(
     app.root_path,
@@ -122,7 +133,12 @@ class Project(db.Model):
 
     github_link = db.Column(db.String(500))
 
+    featured = db.Column(db.Boolean,default=False)
+
     user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
+
+    featured = db.Column(db.Boolean,default=False)
+
 
 class ContactMessage(db.Model):
 
@@ -450,9 +466,29 @@ class PortfolioView(db.Model):
         db.ForeignKey("user.id")
     )
 
+    user = db.relationship(
+        "User"
+    )
+
     count = db.Column(
         db.Integer,
         default=0
+    )
+
+class PortfolioLike(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    portfolio_owner_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id")
+    )
+
+    visitor_ip = db.Column(
+        db.String(100)
     )
 
 @app.route("/upload_resume", methods=["POST"])
@@ -462,6 +498,9 @@ def upload_resume():
         return redirect("/login")
 
     file = request.files["resume"]
+
+    if not allowed_file(file.filename):
+        return "Only PDF files allowed"
 
     if file.filename == "":
         return "Please select a resume"
@@ -652,24 +691,23 @@ def add_project():
         description = request.form["description"]
         github_link = request.form["github_link"]
 
-        featured = "featured" in request.form
+        featured = (
+            "featured" in request.form
+        )
 
         project = Project(
-        title=title,
-        technology=technology,
-        description=description,
-        github_link=github_link,
-        featured=featured,
-        user_id=session["user_id"]
-    )
+            title=title,
+            technology=technology,
+            description=description,
+            github_link=github_link,
+            featured=featured,
+            user_id=session["user_id"]
+        )
 
         activity = Activity(
-
             user_id=session["user_id"],
-
-        activity="Added a new project"
-
-)
+            activity="Added a new project"
+        )
 
         db.session.add(project)
         db.session.add(activity)
@@ -677,10 +715,10 @@ def add_project():
         db.session.commit()
 
         return render_template(
-    "success.html",
-    message="Project Saved Successfully 🎉",
-    redirect_url="/projects"
-)
+            "success.html",
+            message="Project Saved Successfully 🎉",
+            redirect_url="/projects"
+        )
 
     return render_template("add_project.html")
 
@@ -836,7 +874,6 @@ def skills():
 def about():
     return render_template("about.html")
 
-
 @app.route("/contact", methods=["GET", "POST"])
 def contact():
 
@@ -957,6 +994,9 @@ def upload_photo():
         return redirect("/login")
 
     file = request.files["photo"]
+
+    if not allowed_file(file.filename):
+        return "Only PNG, JPG, JPEG files allowed"
 
     if file.filename == "":
         return "Please select a file"
@@ -1610,7 +1650,7 @@ def delete_account():
 def public_profile(username):
 
     user = User.query.filter_by(
-        name=username
+        username=username
     ).first()
 
     if not user:
@@ -1863,6 +1903,10 @@ def public_portfolio(username):
         username=username
     ).first_or_404()
 
+    likes = PortfolioLike.query.filter_by(
+    portfolio_owner_id=user.id
+    ).count()
+
     skills = Skill.query.filter_by(
         user_id=user.id
     ).all()
@@ -1913,7 +1957,8 @@ def public_portfolio(username):
         experiences=experiences,
         social=social,
         resume=resume,
-        views=view
+        views=view,
+        likes=likes
     )
 
 @app.route("/my_username")
@@ -1940,11 +1985,99 @@ def share_profile():
 
     return redirect(f"/portfolio/{user.username}")
 
+@app.route("/like_portfolio/<int:user_id>")
+def like_portfolio(user_id):
 
-            
+    ip = request.remote_addr
+
+    existing_like = PortfolioLike.query.filter_by(
+        portfolio_owner_id=user_id,
+        visitor_ip=ip
+    ).first()
+
+    if not existing_like:
+
+        like = PortfolioLike(
+            portfolio_owner_id=user_id,
+            visitor_ip=ip
+        )
+
+        db.session.add(like)
+        db.session.commit()
+
+    total_likes = PortfolioLike.query.filter_by(
+        portfolio_owner_id=user_id
+    ).count()
+
+    return {
+        "likes": total_likes
+    }
+
+@app.route("/top_portfolios")
+def top_portfolios():
+
+    top_views = PortfolioView.query.order_by(
+        PortfolioView.count.desc()
+    ).limit(10).all()
+
+    return render_template(
+        "top_portfolios.html",
+        top_views=top_views
+    )
+
+@app.route("/top_liked")
+def top_liked():
+
+    top_likes = db.session.query(
+        PortfolioLike.portfolio_owner_id,
+        func.count(
+            PortfolioLike.id
+        ).label("total_likes")
+    ).group_by(
+        PortfolioLike.portfolio_owner_id
+    ).order_by(
+        func.count(
+            PortfolioLike.id
+        ).desc()
+    ).all()
+
+    return render_template(
+        "top_liked.html",
+        top_likes=top_likes
+    )
+
+@app.route("/forgot_password", methods=["GET", "POST"])
+def forgot_password():
+
+    if request.method == "POST":
+
+        username = request.form["username"]
+        new_password = request.form["new_password"]
+
+        user = User.query.filter_by(
+            username=username
+        ).first()
+
+        if user:
+
+            user.password = generate_password_hash(
+                new_password
+            )
+
+            db.session.commit()
+
+            return render_template(
+                "success.html",
+                message="Password Reset Successfully 🎉",
+                redirect_url="/login"
+            )
+
+    return render_template(
+        "forgot_password.html"
+    )
+
 if __name__ == "__main__":
 
     with app.app_context():
         db.create_all()
-
     app.run(debug=True)

@@ -15,43 +15,40 @@
 
     <nav class="navbar">
 
-        <div class="logo">
-            Student Service
-        </div>
+    <div class="logo">
+        🚀 Student Service
+    </div>
 
-        <button id="theme-toggle" class="theme-btn">
+    <div class="nav-links">
+
+        <a href="/dashboard">Home</a>
+        <a href="/about">About</a>
+        <a href="/add_project">Add Project</a>
+        <a href="/projects">Projects</a>
+        <a href="/profile">Profile</a>
+        <a href="/contact">Contact</a>
+        <a href="/messages">Messages</a>
+        <a href="/settings">Settings</a>
+
+        <a href="/portfolio/{{ user.username }}"
+           target="_blank">
+           Your Portfolio
+        </a>
+
+        <a href="/logout">
+           Logout
+        </a>
+
+        <button id="theme-toggle" class="theme-nav-btn">
             🌙
         </button>
 
-        <div class="nav-links">
+    </div>
 
-            <a href="/dashboard">Home</a>
-
-            <a href="/about">About</a>
-
-            <a href="/projects">Projects</a>
-
-            <a href="/add_project">Add Project</a>
-
-            <a href="/contact">Contact</a>
-
-            <a href="/messages">Messages</a>
-
-            <a href="/profile">Profile</a>
-
-            <a href="/settings">Settings</a>
-
-            <a href="/portfolio/{{ user.username }}"target="_blank">🌐 My Public Portfolio</a>
-
-            <a href="/logout">Logout</a>
-
-        </div>
-
-    </nav>
-
+</nav>
     <hr>
 
-    <section class="hero">
+    <section class="hero glass-card">
 
     <h1>
     {{ greeting }}, {{ user.name }} 👋
@@ -69,7 +66,9 @@
         Manage your portfolio, projects, skills and achievements etc.
     </p>
 
-    <h3>Complete Your Profile</h3>
+    <h3>
+    🎯 Profile Completion Checklist
+    </h3>
 
 <ul>
 
@@ -130,11 +129,19 @@
     <section class="dashboard-links">
 
     <a href="/feedback" class="project-card">
-    📝 Feedback
+        📝 Feedback
     </a>
 
     <a href="/my_feedback" class="project-card">
     📋 My Feedback
+    </a>
+
+    <a href="/top_portfolios" class="project-card">
+    🔥 Most Viewed
+    </a>
+
+    <a href="/top_liked" class="project-card">
+    ❤️ Most Liked
     </a>
 
     {% if user.email == "pankajraj2025434@gmail.com" %}
@@ -153,7 +160,9 @@
 
 <section class="recent-activity">
 
-    <h2>Recent Activity</h2>
+    <h2>
+    📌 Recent Activity
+    </h2>
 
     {% for activity in activities %}
 
@@ -167,9 +176,11 @@
 
 </section>
 
-<section class="dashboard-stats">
+<h2 class="section-title">
+    📊 {{ user.name }}'s Statistics
+</h2>
 
-    <h2>{{ user.name }}'s Statistics</h2>
+<section class="dashboard-stats">
 
     <div class="project-card">
         <h3>Projects</h3>
@@ -212,7 +223,9 @@
 
     <section class="projects-showcase">
 
-        <h2>Featured Projects</h2>
+        <h2>
+            🚀 Featured Projects
+        </h2>
 
         {% for project in projects %}
 
@@ -249,79 +262,6 @@
 
 <script>
 
-const toggleBtn =
-document.getElementById("theme-toggle");
-
-if(toggleBtn){
-
-    if(localStorage.getItem("theme")==="dark"){
-
-        document.body.classList.add("dark-mode");
-
-        toggleBtn.innerHTML="☀️";
-    }
-
-    toggleBtn.addEventListener("click",()=>{
-
-        document.body.classList.toggle(
-            "light-mode"
-        );
-
-        if(document.body.classList.contains(
-            "light-mode"
-        )){
-
-            localStorage.setItem(
-                "theme",
-                "light"
-            );
-
-            toggleBtn.innerHTML="☀️";
-
-        }else{
-
-            localStorage.setItem(
-                "theme",
-                "dark"
-            );
-
-            toggleBtn.innerHTML="🌙";
-        }
-    });
-
-}
-
-const rain =
-document.getElementById("rain");
-
-    if(rain){
-
-        for(let i=0;i<120;i++){
-
-        const drop =
-        document.createElement("span");
-
-        drop.classList.add("drop");
-
-        drop.style.left =
-        Math.random()*100+"vw";
-
-        drop.style.animationDuration =
-        (Math.random()*2+1)+"s";
-
-        drop.style.animationDelay =
-        Math.random()*3+"s";
-
-        rain.appendChild(drop);
-    }
-}
-
-</script>
-
-</body>
-</html>
-
-<script>
 async function shareProfile() {
 
     const profileUrl =
@@ -345,4 +285,48 @@ async function shareProfile() {
 }
 </script>
 
+
+<script>
+
+const toggleBtn =
+document.getElementById("theme-toggle");
+
+if(localStorage.getItem("theme")==="dark"){
+
+    document.body.classList.add("dark-mode");
+
+    toggleBtn.innerHTML =
+    "☀️ Light Mode";
+}
+
+toggleBtn.addEventListener("click",()=>{
+
+    document.body.classList.toggle("dark-mode");
+
+    if(document.body.classList.contains("dark-mode")){
+
+        localStorage.setItem(
+            "theme",
+            "dark"
+        );
+
+        toggleBtn.innerHTML =
+        "☀️ Light Mode";
+
+    }else{
+
+        localStorage.setItem(
+            "theme",
+            "light"
+        );
+
+        toggleBtn.innerHTML =
+        "🌙 Dark Mode";
+    }
+});
+
+</script>
+
 </body>
+
+</html>

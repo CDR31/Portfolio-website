@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Top Liked Portfolios</title>
+</head>
+<body>
+
+<h1>❤️ Most Liked Portfolios</h1>
+
+{% for item in top_likes %}
+
+<p>
+
+User ID:
+{{ item.portfolio_owner_id }}
+
+-
+
+Likes:
+{{ item.total_likes }}
+
+</p>
+
+{% endfor %}
+
+</body>
+</html>

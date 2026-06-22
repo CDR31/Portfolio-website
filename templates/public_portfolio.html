@@ -8,6 +8,9 @@
 </head>
 
 <body>
+    <button id="theme-toggle" class="theme-toggle">
+        🌙 Dark Mode
+    </button>
 
 <div class="promotion-banner">
 
@@ -49,12 +52,23 @@
         {{ views.count if views else 0 }}
         </p>
 
-        <button onclick="sharePortfolio()" class="btn">
-            🔗 Share Portfolio
+        <p>
+        👍 Likes:
+        <span id="like-count">
+        {{ likes }}
+        </span>
+        </p>
+
+        <button
+            id="like-btn"
+            class="btn">
+
+            👍 Like Portfolio
+
         </button>
 
-        <button id="theme-toggle" class="btn">
-            🌙 Dark Mode
+        <button onclick="sharePortfolio()" class="btn">
+            🔗 Share Portfolio
         </button>
 
     </div>
@@ -79,7 +93,15 @@
 
         <div class="project-card">
 
-            <h3>{{ project.title }}</h3>
+            <h3>
+
+            {{ project.title }}
+
+            {% if project.featured %}
+                ⭐ Featured
+            {% endif %}
+
+            </h3>
 
             <p>{{ project.description }}</p>
 
@@ -312,26 +334,33 @@ if(toggleBtn){
 
 <script>
 
-const rainContainer =
-document.getElementById("rain");
+const likeBtn =
+document.getElementById("like-btn");
 
-for(let i=0;i<120;i++){
+const likeCount =
+document.getElementById("like-count");
 
-    const drop =
-    document.createElement("div");
+if(likeBtn){
 
-    drop.classList.add("drop");
+    likeBtn.addEventListener(
+        "click",
+        async () => {
 
-    drop.style.left =
-    Math.random()*100 + "vw";
+            const response =
+            await fetch(
+                "/like_portfolio/{{ user.id }}"
+            );
 
-    drop.style.animationDuration =
-    (Math.random()*2+1)+"s";
+            const data =
+            await response.json();
 
-    drop.style.animationDelay =
-    Math.random()*2+"s";
+            likeCount.innerText =
+            data.likes;
 
-    rainContainer.appendChild(drop);
+            likeBtn.innerText =
+            "❤️ Liked";
+        }
+    );
 }
 
 </script>

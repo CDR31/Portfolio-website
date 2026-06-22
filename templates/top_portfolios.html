@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Top Portfolios</title>
+</head>
+<body>
+
+<h1>🔥 Most Viewed Portfolios</h1>
+
+{% for view in top_views %}
+
+<p>
+    {{ view.user.username }}
+    -
+    {{ view.count }} Views
+</p>
+
+{% endfor %}
+
+</body>
+</html>
