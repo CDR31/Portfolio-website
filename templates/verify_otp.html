@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify OTP</title>
+</head>
+<body>
+
+<h1>📩 Verify OTP</h1>
+
+<p id="timer">05:00</p>
+
+<form method="POST">
+
+    <input
+        type="text"
+        name="otp"
+        placeholder="Enter OTP"
+        required>
+
+    <button type="submit">
+        Verify OTP
+    </button>
+
+</form>
+
+<br><br>
+
+<a href="/resend_otp">
+    Resend OTP
+</a>
+
+<script>
+
+let time = 300;
+
+let timer = document.getElementById("timer");
+
+setInterval(() => {
+
+    let minutes = Math.floor(time / 60);
+    let seconds = time % 60;
+
+    timer.innerHTML =
+        `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+
+    if(time > 0){
+        time--;
+    }
+
+}, 1000);
+
+</script>
+
+</body>
+</html>

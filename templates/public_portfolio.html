@@ -26,6 +26,18 @@
 
     <div class="hero-banner">
 
+        {% if user.cover_photo %}
+
+        <img
+        src="{{ url_for(
+        'static',
+        filename='cover_photos/' +
+        user.cover_photo
+        ) }}"
+        class="cover-banner">
+
+        {% endif %}
+
         {% if user.profile_photo %}
 
         <img
@@ -40,6 +52,17 @@
         {% endif %}
 
         <h1>{{ user.name }}</h1>
+
+        {% for badge in badges %}
+
+        <div class="badge-card">
+
+            {{ badge.badge_name }}
+
+        </div>
+
+        {% endfor %}
+
         <p>Public Portfolio</p>
 
         <p>
@@ -367,3 +390,44 @@ if(likeBtn){
 
 </body>
 </html>
+
+<hr>
+
+<h2>💬 Comments</h2>
+
+<form
+action="/add_comment/{{ user.id }}"
+method="POST">
+
+    <input
+    type="text"
+    name="visitor_name"
+    placeholder="Your Name"
+    required>
+
+    <textarea
+    name="comment"
+    placeholder="Write Comment"
+    required></textarea>
+
+    <button type="submit">
+        Post Comment
+    </button>
+
+</form>
+
+{% for comment in comments %}
+
+<div class="project-card">
+
+    <h4>
+        {{ comment.visitor_name }}
+    </h4>
+
+    <p>
+        {{ comment.comment }}
+    </p>
+
+</div>
+
+{% endfor %}

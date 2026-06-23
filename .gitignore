@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 venv/
 .env
+portfolio.db
 
 static/user_resumes/
 static/certificates/

@@ -3,21 +3,38 @@ import os
 from flask import Flask, render_template, request, session, redirect,send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
 from sqlalchemy import func
+from datetime import datetime,timedelta,UTC
 import os
 import secrets
+import random
+from flask_mail import Mail, Message
+from authlib.integrations.flask_client import OAuth
+from flask import url_for
 
 from dotenv import load_dotenv
-from authlib.integrations.flask_client import OAuth
-
-app = Flask(__name__)
 load_dotenv()
+app = Flask(__name__)
 
-app.secret_key = os.environ.get(
-    "SECRET_KEY",
-    "pankaj_portfolio_secret_2026"
+# app.secret_key = "pankaj_portfolio_secret_2026"
+
+app.secret_key = os.getenv(
+    "SECRET_KEY"
 )
+
+app.config["MAIL_SERVER"] = "smtp.gmail.com"
+app.config["MAIL_PORT"] = 587
+app.config["MAIL_USE_TLS"] = True
+
+app.config["MAIL_USERNAME"] = os.getenv(
+    "MAIL_USERNAME"
+)
+
+app.config["MAIL_PASSWORD"] = os.getenv(
+    "MAIL_PASSWORD"
+)
+
+mail = Mail(app)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///portfolio.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -117,10 +134,10 @@ class User(db.Model):
 
     profile_photo = db.Column(db.String(300))
 
+    cover_photo = db.Column(db.String(200))
+
     is_active = db.Column(db.Boolean,default=True)
     
-
-
 class Project(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
@@ -136,9 +153,6 @@ class Project(db.Model):
     featured = db.Column(db.Boolean,default=False)
 
     user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
-
-    featured = db.Column(db.Boolean,default=False)
-
 
 class ContactMessage(db.Model):
 
@@ -475,6 +489,21 @@ class PortfolioView(db.Model):
         default=0
     )
 
+class PortfolioVisitor(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    portfolio_owner_id = db.Column(
+        db.Integer
+    )
+
+    visitor_ip = db.Column(
+        db.String(100)
+    )
+
 class PortfolioLike(db.Model):
 
     id = db.Column(
@@ -489,6 +518,52 @@ class PortfolioLike(db.Model):
 
     visitor_ip = db.Column(
         db.String(100)
+    )
+
+class PasswordResetOTP(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120))
+    otp = db.Column(db.String(6))
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
+
+class Badge(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id")
+    )
+
+    badge_name = db.Column(
+        db.String(100)
+    )
+
+class PortfolioComment(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    portfolio_owner_id = db.Column(
+        db.Integer
+    )
+
+    visitor_name = db.Column(
+        db.String(100)
+    )
+
+    comment = db.Column(
+        db.Text
     )
 
 @app.route("/upload_resume", methods=["POST"])
@@ -1850,15 +1925,7 @@ def my_feedback():
         feedbacks=feedbacks
     )
 
-@app.route("/google_login")
-def google_login():
-
-    redirect_uri = "http://127.0.0.1:5000/google_callback"
-
-    return google.authorize_redirect(
-        redirect_uri
-    )
-
+redirect_uri = "http://127.0.0.1:5000/google_callback"
 @app.route("/google_callback")
 def google_callback():
 
@@ -1932,34 +1999,69 @@ def public_portfolio(username):
     ).first()
 
     view = PortfolioView.query.filter_by(
-    user_id=user.id
+        user_id=user.id
     ).first()
+
+    ip = request.remote_addr
+
+    existing_visitor = PortfolioVisitor.query.filter_by(
+        portfolio_owner_id=user.id,
+        visitor_ip=ip
+    ).first()
+
+    comments = PortfolioComment.query.filter_by(
+        portfolio_owner_id=user.id
+    ).all()
+
+    if not existing_visitor:
+
+        visitor = PortfolioVisitor(
+            portfolio_owner_id=user.id,
+            visitor_ip=ip
+        )
+
+        db.session.add(visitor)
+
+        if not view:
+
+            view = PortfolioView(
+                user_id=user.id,
+                count=0
+            )
+
+            db.session.add(view)
+
+        view.count += 1
+
+        db.session.commit()
 
     if not view:
 
         view = PortfolioView(
-        user_id=user.id,
-        count=0
-    )
+            user_id=user.id,
+            count=0
+        )
 
-    db.session.add(view)
+    update_badges(user)
 
-    view.count += 1
-
-    db.session.commit()
+    badges = Badge.query.filter_by(
+        user_id=user.id
+    ).all()
 
     return render_template(
-        "public_portfolio.html",
-        user=user,
-        skills=skills,
-        projects=projects,
-        certificates=certificates,
-        experiences=experiences,
-        social=social,
-        resume=resume,
-        views=view,
-        likes=likes
-    )
+    "public_portfolio.html",
+    user=user,
+    skills=skills,
+    projects=projects,
+    certificates=certificates,
+    experiences=experiences,
+    social=social,
+    resume=resume,
+    views=view,
+    likes=likes,
+    badges=badges,
+    comments=comments
+)
 
 @app.route("/my_username")
 def my_username():
@@ -2046,16 +2148,125 @@ def top_liked():
         top_likes=top_likes
     )
 
-@app.route("/forgot_password", methods=["GET", "POST"])
+@app.route("/forgot_password", methods=["GET","POST"])
 def forgot_password():
 
     if request.method == "POST":
 
-        username = request.form["username"]
-        new_password = request.form["new_password"]
+        email = request.form["email"]
+
+        print("ENTERED EMAIL =", email)
 
         user = User.query.filter_by(
-            username=username
+            email=email
+        ).first()
+
+        print("USER =", user)
+
+        if user:
+
+            otp = str(
+                random.randint(
+                    100000,
+                    999999
+                )
+            )
+
+            print("OTP =", otp)
+
+            reset = PasswordResetOTP(
+                email=email,
+                otp=otp
+            )
+
+            db.session.add(reset)
+            db.session.commit()
+
+            msg = Message(
+                subject="Portfolio Password Reset OTP",
+                sender=app.config["MAIL_USERNAME"],
+                recipients=[email]
+            )
+
+            msg.body = f"""
+Your OTP is: {otp}
+
+This OTP will expire in 5 minutes please paste this OTP in Your OTP Section
+"""
+
+            try:
+
+                mail.send(msg)
+
+                print(
+                    "EMAIL SENT SUCCESSFULLY"
+                )
+
+            except Exception as e:
+
+                print(
+                    "EMAIL ERROR =",
+                    e
+                )
+
+            session["reset_email"] = email
+
+            return redirect(
+                "/verify_otp"
+            )
+
+        else:
+
+            print(
+                "USER NOT FOUND"
+            )
+
+            return "Email not registered"
+
+    return render_template(
+        "forgot_password.html"
+    )
+
+@app.route("/verify_otp", methods=["GET","POST"])
+def verify_otp():
+
+    if request.method == "POST":
+
+        entered_otp = request.form["otp"]
+
+        record = PasswordResetOTP.query.filter_by(
+            email=session["reset_email"],
+            otp=entered_otp
+        ).first()
+
+        if record:
+
+            
+
+            if datetime.now(UTC).replace(tzinfo=None) - record.created_at > timedelta(minutes=5):
+                return "OTP Expired"
+
+            db.session.delete(record)
+            db.session.commit()
+
+            return redirect("/reset_password")
+
+        return "Invalid OTP"
+
+    return render_template(
+        "verify_otp.html"
+    )
+@app.route("/reset_password", methods=["GET","POST"])
+def reset_password():
+
+    if request.method == "POST":
+
+        new_password = request.form[
+            "password"
+        ]
+
+        user = User.query.filter_by(
+            email=session["reset_email"]
         ).first()
 
         if user:
@@ -2066,18 +2277,248 @@ def forgot_password():
 
             db.session.commit()
 
-            return render_template(
-                "success.html",
-                message="Password Reset Successfully 🎉",
-                redirect_url="/login"
+            session.pop(
+                "reset_email",
+                None
             )
 
+            return redirect("/login")
+
+        db.session.commit()
+
+        return redirect("/login")
+
     return render_template(
-        "forgot_password.html"
+        "reset_password.html"
     )
+
+@app.route("/upload_cover", methods=["GET", "POST"])
+def upload_cover():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    if request.method == "POST":
+
+        file = request.files["cover"]
+
+        if file.filename == "":
+            return "Please select a file"
+
+        if not allowed_file(file.filename):
+            return "Invalid file"
+
+        os.makedirs(
+            "static/cover_photos",
+            exist_ok=True
+        )
+
+        filename = secure_filename(
+            file.filename
+        )
+
+        file.save(
+            os.path.join(
+                "static/cover_photos",
+                filename
+            )
+        )
+
+        user = User.query.get(
+            session["user_id"]
+        )
+
+        user.cover_photo = filename
+
+        db.session.commit()
+
+        return redirect("/profile")
+
+    return render_template(
+        "upload_cover.html"
+    )
+
+@app.route("/google_login")
+def google_login():
+
+    redirect_uri = url_for(
+        "google_callback",
+        _external=True
+    )
+
+    return google.authorize_redirect(
+        redirect_uri
+    )
+
+
+def update_badges(user):
+
+    views = PortfolioView.query.filter_by(
+        user_id=user.id
+    ).first()
+
+    likes = PortfolioLike.query.filter_by(
+        portfolio_owner_id=user.id
+    ).count()
+
+    Badge.query.filter_by(
+        user_id=user.id
+    ).delete()
+
+    if views and views.count >= 50:
+
+        db.session.add(
+            Badge(
+                user_id=user.id,
+                badge_name="🔥 Top Viewed Creator"
+            )
+        )
+
+    if likes >= 10:
+
+        db.session.add(
+            Badge(
+                user_id=user.id,
+                badge_name="❤️ Top Liked Creator"
+            )
+        )
+
+    if likes >= 5 and views and views.count >= 20:
+
+        db.session.add(
+            Badge(
+                user_id=user.id,
+                badge_name="🚀 Rising Developer"
+            )
+        )
+
+    db.session.commit()
+
+@app.route("/analytics")
+def analytics():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user_id = session["user_id"]
+
+    views = PortfolioView.query.filter_by(
+        user_id=user_id
+    ).first()
+
+    likes = PortfolioLike.query.filter_by(
+        portfolio_owner_id=user_id
+    ).count()
+
+    projects = Project.query.filter_by(
+        user_id=user_id
+    ).count()
+
+    certificates = Certificate.query.filter_by(
+        user_id=user_id
+    ).count()
+
+    skills = Skill.query.filter_by(
+        user_id=user_id
+    ).count()
+
+    educations = Education.query.filter_by(
+        user_id=user_id
+    ).count()
+
+    return render_template(
+        "analytics.html",
+        views=views.count if views else 0,
+        likes=likes,
+        projects=projects,
+        certificates=certificates,
+        skills=skills,
+        educations=educations
+    )
+
+@app.route(
+    "/add_comment/<int:user_id>",
+    methods=["POST"]
+)
+def add_comment(user_id):
+
+    visitor_name = request.form[
+        "visitor_name"
+    ]
+
+    comment_text = request.form[
+        "comment"
+    ]
+
+    comment = PortfolioComment(
+        portfolio_owner_id=user_id,
+        visitor_name=visitor_name,
+        comment=comment_text
+    )
+
+    db.session.add(comment)
+    db.session.commit()
+
+    return redirect(request.referrer)
+
+@app.route("/resend_otp")
+def resend_otp():
+
+    email = session.get(
+        "reset_email"
+    )
+
+    if not email:
+
+        return redirect(
+            "/forgot_password"
+        )
+
+    otp = str(
+        random.randint(
+            100000,
+            999999
+        )
+    )
+
+    PasswordResetOTP.query.filter_by(
+        email=email
+    ).delete()
+
+    reset = PasswordResetOTP(
+        email=email,
+        otp=otp
+    )
+
+    db.session.add(reset)
+    db.session.commit()
+
+    print(
+        "NEW OTP =",
+        otp
+    )
+
+    return redirect(
+        "/verify_otp"
+    )
+
+@app.route("/check_users")
+def check_users():
+
+    users = User.query.all()
+
+    for user in users:
+        print(
+            user.id,
+            user.username,
+            user.email
+        )
+
+    return "Check Terminal"
 
 if __name__ == "__main__":
 
     with app.app_context():
+        db.drop_all()
         db.create_all()
     app.run(debug=True)
