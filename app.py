@@ -154,6 +154,8 @@ class Project(db.Model):
 
     user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
+    project_image = db.Column(db.String(200))
+
 class ContactMessage(db.Model):
 
     id = db.Column(
@@ -566,6 +568,21 @@ class PortfolioComment(db.Model):
         db.Text
     )
 
+class RegistrationOTP(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    email = db.Column(
+        db.String(120)
+    )
+
+    otp = db.Column(
+        db.String(6)
+    )
+
 @app.route("/upload_resume", methods=["POST"])
 def upload_resume():
 
@@ -765,6 +782,22 @@ def add_project():
         technology = request.form["technology"]
         description = request.form["description"]
         github_link = request.form["github_link"]
+        image = request.files["project_image"]
+
+        filename = None
+
+        if image and image.filename:
+
+            filename = secure_filename(
+                image.filename
+            )
+
+            image.save(
+                os.path.join(
+                    "static/project_images",
+                    filename
+                )
+            )
 
         featured = (
             "featured" in request.form
@@ -776,7 +809,8 @@ def add_project():
             description=description,
             github_link=github_link,
             featured=featured,
-            user_id=session["user_id"]
+            user_id=session["user_id"],
+            project_image=filename
         )
 
         activity = Activity(
@@ -824,23 +858,48 @@ def register():
         if existing_user:
             return "Email already registered 🙌"
 
-        new_user = User(
-            username=email.split("@")[0],
-            name=name,
-            email=email,
-            password=password
+        otp = str(
+            random.randint(
+                100000,
+                999999
+            )
         )
 
-        db.session.add(new_user)
-        db.session.commit()
+        session["reg_name"] = name
+        session["reg_email"] = email
+        session["reg_password"] = password
+        session["reg_otp"] = otp
 
-        session["user_id"] = new_user.id
-        session["user_name"] = new_user.name
+        msg = Message(
+            subject="Portfolio Registration OTP",
+            sender=app.config["MAIL_USERNAME"],
+            recipients=[email]
+        )
 
-        return redirect("/dashboard")
+        msg.body = f"""
+Hi, Welcome to Student Service Platform,
+To Create professional Public Portfolio to showcase their skills to everyone on internet
+before going to further please read Term & Condition...
+Your Registration Code is: {otp}
 
-    return render_template("register.html")
+This OTP will expire in 5 minutes.
+"""
 
+        try:
+
+            mail.send(msg)
+
+            return redirect(
+                "/verify_registration_otp"
+            )
+
+        except Exception as e:
+
+            return f"Email Error: {e}"
+
+    return render_template(
+        "register.html"
+    )
 @app.route("/projects")
 def projects():
 
@@ -945,9 +1004,49 @@ def project_detail(id):
 def skills():
     return render_template("skills.html")
 
-@app.route("/about")
+@app.route("/about", methods=["GET", "POST"])
 def about():
-    return render_template("about.html")
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user_id = session["user_id"]
+
+    about = AboutMe.query.filter_by(
+        user_id=user_id
+    ).first()
+
+    if request.method == "POST":
+
+        bio = request.form["bio"]
+        career_goal = request.form["career_goal"]
+        hobbies = request.form["hobbies"]
+
+        if about:
+
+            about.bio = bio
+            about.career_goal = career_goal
+            about.hobbies = hobbies
+
+        else:
+
+            about = AboutMe(
+                bio=bio,
+                career_goal=career_goal,
+                hobbies=hobbies,
+                user_id=user_id
+            )
+
+            db.session.add(about)
+
+        db.session.commit()
+
+        return redirect("/dashboard")
+
+    return render_template(
+        "about.html",
+        about=about
+    )
 
 @app.route("/contact", methods=["GET", "POST"])
 def contact():
@@ -1580,9 +1679,17 @@ def change_password():
         session["user_id"]
     )
 
-    old_password = request.form["old_password"]
-    new_password = request.form["new_password"]
-    confirm_password = request.form["confirm_password"]
+    old_password = request.form[
+        "old_password"
+    ]
+
+    new_password = request.form[
+        "new_password"
+    ]
+
+    confirm_password = request.form[
+        "confirm_password"
+    ]
 
     if not check_password_hash(
         user.password,
@@ -1593,13 +1700,90 @@ def change_password():
     if new_password != confirm_password:
         return "Passwords Do Not Match"
 
-    user.password = generate_password_hash(
-        new_password
+    otp = str(
+        random.randint(
+            100000,
+            999999
+        )
     )
 
-    db.session.commit()
+    session["password_change_otp"] = otp
+    session["new_password"] = new_password
 
-    return redirect("/settings")
+    msg = Message(
+        subject="Password Change OTP",
+        sender=app.config["MAIL_USERNAME"],
+        recipients=[user.email]
+    )
+
+    msg.body = f"""
+Your Password Change OTP is: {otp}
+
+This OTP will expire in 5 minutes.
+"""
+
+    try:
+
+        mail.send(msg)
+
+    except Exception as e:
+
+        return f"Email Error: {e}"
+
+    return redirect(
+        "/verify_password_change_otp"
+    )
+
+@app.route(
+    "/verify_password_change_otp",
+    methods=["GET", "POST"]
+)
+def verify_password_change_otp():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    if request.method == "POST":
+
+        entered_otp = request.form[
+            "otp"
+        ]
+
+        if entered_otp == session.get(
+            "password_change_otp"
+        ):
+
+            user = User.query.get(
+                session["user_id"]
+            )
+
+            user.password = (
+                generate_password_hash(
+                    session["new_password"]
+                )
+            )
+
+            db.session.commit()
+
+            session.pop(
+                "password_change_otp",
+                None
+            )
+
+            session.pop(
+                "new_password",
+                None
+            )
+
+            return redirect(
+                "/settings"
+            )
+
+        return "Invalid OTP"
+
+    return render_template(
+        "verify_password_change_otp.html"
+    )
 
 @app.route("/change_email", methods=["POST"])
 def change_email():
@@ -1616,15 +1800,33 @@ def change_email():
     if existing_user:
         return "Email already exists"
 
-    user = User.query.get(
-        session["user_id"]
+    otp = str(
+        random.randint(
+            100000,
+            999999
+        )
     )
 
-    user.email = new_email
+    session["new_email"] = new_email
+    session["email_change_otp"] = otp
 
-    db.session.commit()
-    return redirect("/settings")
+    msg = Message(
+        subject="Email Change OTP",
+        sender=app.config["MAIL_USERNAME"],
+        recipients=[new_email]
+    )
 
+    msg.body = f"""
+Your Email Change OTP is: {otp}
+
+This OTP will expire in 5 minutes.
+"""
+
+    mail.send(msg)
+
+    return redirect(
+        "/verify_email_change_otp"
+    )
 @app.route("/deactivate_account")
 def deactivate_account():
 
@@ -2013,6 +2215,10 @@ def public_portfolio(username):
         portfolio_owner_id=user.id
     ).all()
 
+    about = AboutMe.query.filter_by(
+        user_id=user.id
+    ).first()
+
     if not existing_visitor:
 
         visitor = PortfolioVisitor(
@@ -2060,7 +2266,8 @@ def public_portfolio(username):
     views=view,
     likes=likes,
     badges=badges,
-    comments=comments
+    comments=comments,
+    about=about
 )
 
 @app.route("/my_username")
@@ -2516,9 +2723,108 @@ def check_users():
 
     return "Check Terminal"
 
+@app.route("/delete_cover")
+def delete_cover():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(
+        session["user_id"]
+    )
+
+    if user.cover_photo:
+
+        path = os.path.join(
+            "static/cover_photos",
+            user.cover_photo
+        )
+
+        if os.path.exists(path):
+            os.remove(path)
+
+        user.cover_photo = None
+
+        db.session.commit()
+
+    return redirect("/profile")
+
+@app.route(
+    "/verify_registration_otp",
+    methods=["GET", "POST"]
+)
+def verify_registration_otp():
+
+    if request.method == "POST":
+
+        entered_otp = request.form["otp"]
+
+        if entered_otp == session.get(
+            "reg_otp"
+        ):
+
+            new_user = User(
+                username=(
+                    session["reg_email"]
+                    .split("@")[0]
+                    + str(random.randint(1000,9999))
+                ),
+                name=session["reg_name"],
+                email=session["reg_email"],
+                password=session["reg_password"]
+            )
+
+            db.session.add(new_user)
+            db.session.commit()
+
+            session["user_id"] = new_user.id
+            session["user_name"] = new_user.name
+
+            return redirect("/dashboard")
+
+        return "Invalid OTP"
+
+    return render_template(
+        "verify_registration_otp.html"
+    )
+
+@app.route(
+    "/verify_email_change_otp",
+    methods=["GET", "POST"]
+)
+def verify_email_change_otp():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    if request.method == "POST":
+
+        entered_otp = request.form["otp"]
+
+        if entered_otp == session.get(
+            "email_change_otp"
+        ):
+
+            user = User.query.get(
+                session["user_id"]
+            )
+
+            user.email = session[
+                "new_email"
+            ]
+
+            db.session.commit()
+
+            return redirect("/settings")
+
+        return "Invalid OTP"
+
+    return render_template(
+        "verify_email_change_otp.html"
+    )
+
 if __name__ == "__main__":
 
     with app.app_context():
-        db.drop_all()
         db.create_all()
-    app.run(debug=True)
+    app.run(debug=True) 

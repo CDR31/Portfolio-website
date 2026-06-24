@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 
     <title>Profile</title>
+
+    <link
+    rel="icon"
+    type="image/png"
+    href="{{ url_for('static',
+    filename='images/favicon.png') }}">
 
     <link rel="stylesheet"
     href="{{ url_for('static',
@@ -60,6 +65,22 @@
 
 </form>
 
+<h3>Cover Photo</h3>
+
+<form action="/upload_cover"
+      method="POST"
+      enctype="multipart/form-data">
+
+    <input
+        type="file"
+        name="cover">
+
+    <button type="submit">
+        Upload Cover Photo
+    </button>
+
+</form>
+
 {% if user.profile_photo %}
 
 <br><br>
@@ -78,6 +99,16 @@ download>
 
 <a href="/delete_photo">
 ❌ Delete Photo
+</a>
+
+{% endif %}
+
+{% if user.cover_photo %}
+
+<br><br>
+
+<a href="/delete_cover">
+❌ Delete Cover Photo
 </a>
 
 {% endif %}

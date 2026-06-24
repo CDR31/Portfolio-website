@@ -2,6 +2,11 @@
 <html>
 <head>
     <title>{{ user.name }} Portfolio</title>
+    <link
+    rel="icon"
+    type="image/png"
+    href="{{ url_for('static',
+    filename='images/favicon.png') }}">
 
     <link rel="stylesheet"
     href="{{ url_for('static', filename='css/style.css') }}">
@@ -43,7 +48,7 @@
         <img
         src="{{ url_for('static',
         filename='profile_photos/' + user.profile_photo) }}"
-        class="profile-photo">
+        class="portfolio-profile-photo">
 
         {% else %}
 
@@ -98,7 +103,35 @@
 
     <hr>
 
-    <h2>Skills</h2>
+    <h2>👨 About Me</h2>
+
+        {% if about %}
+
+        <div class="project-card">
+
+        <h3>Bio</h3>
+
+        <p>{{ about.bio }}</p>
+
+        <h3>Career Goal</h3>
+
+        <p>{{ about.career_goal }}</p>
+
+        <h3>Hobbies</h3>
+
+        <p>{{ about.hobbies }}</p>
+
+        </div>
+
+        {% else %}
+
+<p>No About Information Added Yet</p>
+
+{% endif %}
+
+<hr>
+
+<h2>Skills</h2>
 
     {% for skill in skills %}
         <span class="skill-card">
@@ -354,7 +387,6 @@ if(toggleBtn){
 }
 
 </script>
-
 <script>
 
 const likeBtn =
@@ -387,9 +419,6 @@ if(likeBtn){
 }
 
 </script>
-
-</body>
-</html>
 
 <hr>
 
@@ -431,3 +460,6 @@ method="POST">
 </div>
 
 {% endfor %}
+
+</body>
+</html>
