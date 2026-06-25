@@ -11,28 +11,23 @@ import random
 from flask_mail import Mail, Message
 from authlib.integrations.flask_client import OAuth
 from flask import url_for
-
+import requests
+from flask_migrate import Migrate
 from dotenv import load_dotenv
 load_dotenv()
+
 app = Flask(__name__)
 
 # app.secret_key = "pankaj_portfolio_secret_2026"
 
-app.secret_key = os.getenv(
-    "SECRET_KEY"
-)
-
+app.secret_key = os.getenv("SECRET_KEY")
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
 
-app.config["MAIL_USERNAME"] = os.getenv(
-    "MAIL_USERNAME"
-)
+app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
 
-app.config["MAIL_PASSWORD"] = os.getenv(
-    "MAIL_PASSWORD"
-)
+app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
 
 mail = Mail(app)
 
@@ -40,6 +35,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///portfolio.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 ALLOWED_EXTENSIONS = {
     "png",
@@ -156,309 +152,157 @@ class Project(db.Model):
 
     project_image = db.Column(db.String(200))
 
+    live_demo = db.Column(db.String(500))
+
 class ContactMessage(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    name = db.Column(
-        db.String(100),
-        nullable=False
-    )
+    name = db.Column(db.String(100),nullable=False)
 
-    email = db.Column(
-        db.String(100),
-        nullable=False
-    )
+    email = db.Column(db.String(100),nullable=False)
 
-    message = db.Column(
-        db.Text,
-        nullable=False
-    )
+    message = db.Column(db.Text,nullable=False)
 
-    receiver_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id")
-    )
+    receiver_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
 class Resume(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    filename = db.Column(
-        db.String(300)
-    )
+    filename = db.Column(db.String(300))
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id")
-    )
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
 class Certificate(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    title = db.Column(
-        db.String(200)
-    )
+    title = db.Column(db.String(200))
 
-    filename = db.Column(
-        db.String(300)
-    )
+    filename = db.Column(db.String(300))
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id")
-    )
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
 class Skill(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    name = db.Column(
-        db.String(100)
-    )
+    name = db.Column(db.String(100))
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id")
-    )
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
 class Education(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    level = db.Column(
-        db.String(50)
-    )
+    level = db.Column(db.String(50))
 
-    institute = db.Column(
-        db.String(200)
-    )
+    institute = db.Column(db.String(200))
 
-    board_university = db.Column(
-        db.String(200)
-    )
+    board_university = db.Column(db.String(200))
 
-    stream_degree = db.Column(
-        db.String(200)
-    )
+    stream_degree = db.Column(db.String(200))
 
-    score = db.Column(
-        db.String(50)
-    )
+    score = db.Column(db.String(50))
 
-    passing_year = db.Column(
-        db.String(20)
-    )
+    passing_year = db.Column(db.String(20))
 
-    achievements = db.Column(
-        db.Text
-    )
+    achievements = db.Column(db.Text)
 
-    subjects = db.Column(
-        db.String(300)
-    )
+    subjects = db.Column(db.String(300))
 
-    city = db.Column(
-        db.String(100)
-    )
+    city = db.Column(db.String(100))
 
-    state = db.Column(
-        db.String(100)
-    )
+    state = db.Column(db.String(100))
 
-    rank = db.Column(
-        db.String(50)
-    )
+    rank = db.Column(db.String(50))
 
-    certificate_file = db.Column(
-        db.String(300)
-    )
+    certificate_file = db.Column(db.String(300))
 
-    marksheet_file = db.Column(
-        db.String(300)
-    )
+    marksheet_file = db.Column(db.String(300))
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id")
-    )
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
 class AboutMe(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    bio = db.Column(
-        db.Text
-    )
+    bio = db.Column(db.Text)
 
-    career_goal = db.Column(
-        db.Text
-    )
+    career_goal = db.Column(db.Text)
 
-    hobbies = db.Column(
-        db.Text
-    )
+    hobbies = db.Column(db.Text)
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id")
-    )
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
 class SocialLink(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    github = db.Column(
-        db.String(300)
-    )
+    github = db.Column(db.String(300))
 
-    linkedin = db.Column(
-        db.String(300)
-    )
+    linkedin = db.Column(db.String(300))
 
-    leetcode = db.Column(
-        db.String(300)
-    )
+    leetcode = db.Column(db.String(300))
 
-    codechef = db.Column(
-        db.String(300)
-    )
+    codechef = db.Column(db.String(300))
 
-    codeforces = db.Column(
-        db.String(300)
-    )
+    codeforces = db.Column(db.String(300))
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id")
-    )
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
 class Achievement(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    title = db.Column(
-        db.String(200)
-    )
+    title = db.Column(db.String(200))
 
-    description = db.Column(
-        db.Text
-    )
+    description = db.Column(db.Text)
 
-    achievement_file = db.Column(
-        db.String(300)
-    )
+    achievement_file = db.Column(db.String(300))
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id")
-    )
-
-    
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
 class Experience(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    company = db.Column(
-        db.String(200)
-    )
+    company = db.Column(db.String(200))
 
-    role = db.Column(
-        db.String(200)
-    )
+    role = db.Column(db.String(200))
 
-    duration = db.Column(
-        db.String(100)
-    )
+    duration = db.Column(db.String(100))
 
-    description = db.Column(
-        db.Text
-    )
+    description = db.Column(db.Text)
 
-    certificate_file = db.Column(
-        db.String(300)
-    )
+    certificate_file = db.Column(db.String(300))
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id")
-    )
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
 class Feedback(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    name = db.Column(
-        db.String(100)
-    )
+    name = db.Column(db.String(100))
 
-    email = db.Column(
-        db.String(100)
-    )
+    email = db.Column(db.String(100))
 
-    message = db.Column(
-        db.Text
-    )
+    message = db.Column(db.Text)
 
-    reply = db.Column(
-        db.Text
-    )
-    user_id = db.Column(
-        db.Integer)
+    reply = db.Column(db.Text)
 
-
+    user_id = db.Column(db.Integer)
 
 class FeedbackMessage(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    feedback_id = db.Column(
-        db.Integer,
-        db.ForeignKey("feedback.id")
-    )
+    feedback_id = db.Column(db.Integer,db.ForeignKey("feedback.id"))
 
-    sender = db.Column(
-        db.String(20)
-    )
+    sender = db.Column(db.String(20))
 
-    message = db.Column(
-        db.Text
-    )
+    message = db.Column(db.Text)
 
     user_reply = db.Column(db.Text)
 
@@ -472,55 +316,29 @@ class Activity(db.Model):
 
 class PortfolioView(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id")
-    )
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
-    user = db.relationship(
-        "User"
-    )
+    user = db.relationship("User")
 
-    count = db.Column(
-        db.Integer,
-        default=0
-    )
+    count = db.Column(db.Integer,default=0)
 
 class PortfolioVisitor(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    portfolio_owner_id = db.Column(
-        db.Integer
-    )
+    portfolio_owner_id = db.Column(db.Integer)
 
-    visitor_ip = db.Column(
-        db.String(100)
-    )
+    visitor_ip = db.Column(db.String(100))
 
 class PortfolioLike(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    portfolio_owner_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id")
-    )
+    portfolio_owner_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
-    visitor_ip = db.Column(
-        db.String(100)
-    )
+    visitor_ip = db.Column(db.String(100))
 
 class PasswordResetOTP(db.Model):
 
@@ -528,60 +346,49 @@ class PasswordResetOTP(db.Model):
     email = db.Column(db.String(120))
     otp = db.Column(db.String(6))
 
-    created_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow
-    )
+    created_at = db.Column(db.DateTime,default=datetime.utcnow)
 
 class Badge(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id")
-    )
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
 
-    badge_name = db.Column(
-        db.String(100)
-    )
+    badge_name = db.Column(db.String(100))
 
 class PortfolioComment(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    portfolio_owner_id = db.Column(
-        db.Integer
-    )
+    portfolio_owner_id = db.Column(db.Integer)
 
-    visitor_name = db.Column(
-        db.String(100)
-    )
+    visitor_name = db.Column(db.String(100))
 
-    comment = db.Column(
-        db.Text
-    )
+    comment = db.Column(db.Text)
 
 class RegistrationOTP(db.Model):
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer,primary_key=True)
 
-    email = db.Column(
-        db.String(120)
-    )
+    email = db.Column(db.String(120))
 
-    otp = db.Column(
-        db.String(6)
-    )
+    otp = db.Column(db.String(6))
+
+class LoginHistory(db.Model):
+
+    id = db.Column(db.Integer,primary_key=True)
+
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"))
+
+    ip_address = db.Column(db.String(100))
+
+    city = db.Column(db.String(100))
+
+    state = db.Column(db.String(100))
+
+    country = db.Column(db.String(100))
+
+    login_time = db.Column(db.DateTime,default=datetime.utcnow)
 
 @app.route("/upload_resume", methods=["POST"])
 def upload_resume():
@@ -644,16 +451,15 @@ def login():
         email = request.form["email"]
         password = request.form["password"]
 
-        
-
-        user = User.query.filter_by(email=email).first()
+        user = User.query.filter_by(
+            email=email
+        ).first()
 
         if user:
 
             if not user.is_active:
 
                 user.is_active = True
-
                 db.session.commit()
 
             if check_password_hash(
@@ -664,12 +470,76 @@ def login():
                 session["user_id"] = user.id
                 session["user_name"] = user.name
 
-                return redirect("/dashboard")
+                ip = request.remote_addr
+
+                try:
+
+                    response = requests.get(
+                        f"http://ip-api.com/json/{ip}"
+                    )
+
+                    data = response.json()
+
+                    ip = data.get("query")
+                    city = data.get("city")
+                    state = data.get("regionName")
+                    country = data.get("country")
+
+                    print("IP =", ip)
+
+                    print("Status Code =", response.status_code)
+
+                    print("Response =", response.text)
+
+                    data = response.json()
+
+                    city = data.get(
+                        "city"
+                    )
+
+                    state = data.get(
+                        "regionName"
+                    )
+
+                    country = data.get(
+                        "country"
+                    )
+
+                except:
+
+                    city = "Unknown"
+                    state = "Unknown"
+                    country = "Unknown"
+
+                history = LoginHistory(
+
+                    user_id=user.id,
+
+                    ip_address=ip,
+
+                    city=city,
+
+                    state=state,
+
+                    country=country
+
+                )
+
+                db.session.add(
+                    history
+                )
+
+                db.session.commit()
+
+                return redirect(
+                    "/dashboard"
+                )
 
         return "Invalid Email or Password 😕"
 
-    return render_template("login.html")
-
+    return render_template(
+        "login.html"
+    )
 @app.route("/dashboard")
 def dashboard():
 
@@ -782,15 +652,14 @@ def add_project():
         technology = request.form["technology"]
         description = request.form["description"]
         github_link = request.form["github_link"]
+        live_demo = request.form["live_demo"]
         image = request.files["project_image"]
 
         filename = None
 
         if image and image.filename:
 
-            filename = secure_filename(
-                image.filename
-            )
+            filename = secure_filename(image.filename)
 
             image.save(
                 os.path.join(
@@ -810,7 +679,8 @@ def add_project():
             github_link=github_link,
             featured=featured,
             user_id=session["user_id"],
-            project_image=filename
+            project_image=filename,
+            live_demo=live_demo
         )
 
         activity = Activity(
@@ -2804,7 +2674,7 @@ def verify_email_change_otp():
         if entered_otp == session.get(
             "email_change_otp"
         ):
-
+            
             user = User.query.get(
                 session["user_id"]
             )
@@ -2821,6 +2691,34 @@ def verify_email_change_otp():
 
     return render_template(
         "verify_email_change_otp.html"
+    )
+
+@app.route("/admin_login_history")
+def admin_login_history():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(
+    session["user_id"]
+)
+
+    if user.email != "pankajraj2025434@gmail.com":
+        return "Access Denied"
+
+    history = db.session.query(
+        LoginHistory,
+        User
+    ).join(
+        User,
+        LoginHistory.user_id == User.id
+    ).order_by(
+        LoginHistory.login_time.desc()
+    ).all()
+
+    return render_template(
+        "admin_login_history.html",
+        history=history
     )
 
 if __name__ == "__main__":

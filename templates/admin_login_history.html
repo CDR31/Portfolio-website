@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Login History</title>
+
+<link rel="stylesheet"
+href="{{ url_for(
+'static',
+filename='css/style.css'
+) }}">
+
+</head>
+
+<body>
+
+<h1>User Login History</h1>
+
+<table boarder="1">
+
+<tr>
+
+<th>Name</th>
+
+<th>Email</th>
+
+<th>IP Address</th>
+
+<th>City</th>
+
+<th>State</th>
+
+<th>Country</th>
+
+<th>Login Time</th>
+
+</tr>
+
+{% for item, user in history %}
+
+<tr>
+
+<td>{{ user.name }},</td>
+
+<td>{{ user.email }},</td>
+
+<td>{{ item.ip_address }},</td>
+
+<td>{{ item.city }},</td>
+
+<td>{{ item.state }},</td>
+
+<td>{{ item.country }},</td>
+
+<td>{{ item.login_time }},</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</body>
+</html>
