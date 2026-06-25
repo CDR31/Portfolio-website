@@ -389,6 +389,11 @@ class LoginHistory(db.Model):
 
     login_time = db.Column(db.DateTime,default=datetime.utcnow)
 
+    user = db.relationship(
+        "User",
+        backref="login_history"
+    )
+
 @app.route("/upload_resume", methods=["POST"])
 def upload_resume():
 
@@ -2705,14 +2710,8 @@ def admin_login_history():
     if user.email != "pankajraj2025434@gmail.com":
         return "Access Denied"
 
-    history = db.session.query(
-        LoginHistory,
-        User
-    ).join(
-        User,
-        LoginHistory.user_id == User.id
-    ).order_by(
-        LoginHistory.login_time.desc()
+    history = LoginHistory.query.order_by(
+    LoginHistory.login_time.desc()
     ).all()
 
     return render_template(

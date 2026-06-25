@@ -1,64 +1,67 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
-<title>Login History</title>
+    <title>User Login History</title>
 
-<link rel="stylesheet"
-href="{{ url_for(
-'static',
-filename='css/style.css'
-) }}">
+    <link rel="stylesheet"
+    href="{{ url_for('static', filename='css/style.css') }}">
 
 </head>
 
 <body>
 
-<h1>User Login History</h1>
+<div class="container">
 
-<table boarder="1">
+<a href="/admin" class="btn page-top-btn">
+    ⬅ Back to Admin Panel
+</a>
 
-<tr>
+<hr>
 
-<th>Name</th>
+<h1>📍 User Login History</h1>
 
-<th>Email</th>
+<table>
 
-<th>IP Address</th>
+    <tr>
 
-<th>City</th>
+        <th>User</th>
+        <th>Email</th>
+        <th>IP Address</th>
+        <th>City</th>
+        <th>State</th>
+        <th>Country</th>
+        <th>Login Time</th>
 
-<th>State</th>
+    </tr>
 
-<th>Country</th>
+    {% for login in history %}
 
-<th>Login Time</th>
+    <tr>
 
-</tr>
+        <td>{{ login.user.name }}</td>
 
-{% for item, user in history %}
+        <td>{{ login.user.email }}</td>
 
-<tr>
+        <td>{{ login.ip_address }}</td>
 
-<td>{{ user.name }},</td>
+        <td>{{ login.city }}</td>
 
-<td>{{ user.email }},</td>
+        <td>{{ login.state }}</td>
 
-<td>{{ item.ip_address }},</td>
+        <td>{{ login.country }}</td>
 
-<td>{{ item.city }},</td>
+        <td>{{ login.login_time }}</td>
 
-<td>{{ item.state }},</td>
+    </tr>
 
-<td>{{ item.country }},</td>
-
-<td>{{ item.login_time }},</td>
-
-</tr>
-
-{% endfor %}
+    {% endfor %}
 
 </table>
 
+</div>
+
 </body>
+
 </html>
